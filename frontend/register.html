@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TS — 회원가입</title>
+
+  <style>
+    :root{
+      --bg:#f5f6fa;
+      --card:#ffffff;
+      --line:#e5e7eb;
+      --text:#111827;
+      --muted:#6b7280;
+
+      /* ✅ 로그인 버튼과 동일 */
+      --brand:#165DFF;
+      --brand2:#0B3AAE;
+
+      --shadow:0 20px 60px rgba(15,23,42,.10);
+      --radius:18px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
+      background: radial-gradient(1100px 500px at 50% -10%, rgba(22,93,255,.10), transparent 60%), var(--bg);
+      color:var(--text);
+    }
+    .wrap{
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      padding:24px 14px;
+    }
+    .card{
+      width:min(560px, 100%);
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding:20px;
+    }
+
+    .title{
+      margin:0;
+      font-size: 18px;
+      font-weight: 1000;
+      letter-spacing: -.4px;
+    }
+    .desc{
+      margin:8px 0 14px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 850;
+      line-height: 1.5;
+    }
+
+    label{
+      display:block;
+      margin: 12px 0 8px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 900;
+    }
+    input{
+      width:100%;
+      height: 46px;
+      border-radius: 14px;
+      border:1px solid var(--line);
+      padding: 0 14px;
+      font-size: 14px;
+      outline:none;
+      font-weight: 900;
+    }
+    input:focus{
+      border-color: rgba(22,93,255,.45);
+      box-shadow: 0 0 0 4px rgba(22,93,255,.12);
+    }
+
+    .hint{
+      margin-top:8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .btn{
+      width:100%;
+      height: 48px;
+      border-radius: 14px;
+      border:1px solid transparent;
+      font-weight:1000;
+      cursor:pointer;
+      background:#fff;
+    }
+    .btnPrimary{
+      background: linear-gradient(135deg, var(--brand), var(--brand2));
+      color:#fff;
+      border-color: transparent;
+      box-shadow: 0 14px 30px rgba(22,93,255,.18);
+    }
+    .btnGhost{
+      background:#fff;
+      border:1px solid var(--line);
+      color:#111827;
+    }
+
+    .btnRow{
+      display:grid;
+      gap:10px;
+      margin-top: 14px;
+    }
+
+    /* ✅ 동의 영역(사진2 느낌) */
+    .agreeBox{
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top:1px solid var(--line);
+    }
+    .agreeRow{
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      margin: 10px 0;
+      font-size: 12px;
+      font-weight: 900;
+      color: var(--text);
+    }
+    .agreeRow input{
+      width:16px;
+      height:16px;
+      margin-top:2px;
+    }
+    .agreeLabel{
+      line-height:1.35;
+    }
+    .termLink{
+      cursor:pointer;
+      color: var(--brand2);
+      text-decoration: underline;
+      font-weight: 1000;
+    }
+    .termBody{
+      display:none;
+      margin: 8px 0 0 26px;
+      padding: 10px 12px;
+      border:1px solid var(--line);
+      border-radius: 12px;
+      background:#f8fafc;
+      color:#334155;
+      font-size: 12px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+    .termBody.on{ display:block; }
+
+    .msg{
+      display:none;
+      margin-top:12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border:1px solid rgba(239,68,68,.20);
+      background: rgba(239,68,68,.08);
+      color: #7f1d1d;
+      font-weight: 900;
+      white-space: pre-wrap;
+      line-height: 1.45;
+    }
+    .msg.ok{
+      border-color: rgba(34,197,94,.22);
+      background: rgba(34,197,94,.10);
+      color:#14532d;
+    }
+
+    .foot{
+      display:flex;
+      justify-content: space-between;
+      align-items:center;
+      gap:10px;
+      margin-top: 12px;
+      flex-wrap:wrap;
+      font-size:12px;
+      color:var(--muted);
+      font-weight: 850;
+    }
+    .foot a{
+      color: var(--brand2);
+      text-decoration: underline;
+      font-weight: 950;
+    }
+  </style>
+
+  <script defer src="./register.js"></script>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1 class="title">이메일 회원가입</h1>
+      <p class="desc">회원가입 후 로그인하면 회원 계산 결과 저장/기록 관리가 가능합니다.</p>
+
+      <form id="registerForm" onsubmit="return false;" action="javascript:void(0)" novalidate>
+        <label>이메일</label>
+        <input id="email" type="email" placeholder="you@example.com" autocomplete="username" />
+
+        <label>비밀번호</label>
+        <input id="password" type="password" placeholder="비밀번호" autocomplete="new-password" />
+        <div class="hint">* 10자 이상이며 영문, 숫자, 특수문자를 모두 포함하세요</div>
+
+        <!-- ✅ 비밀번호 재확인 추가 -->
+        <label>비밀번호 재확인</label>
+        <input id="password2" type="password" placeholder="비밀번호 재확인" autocomplete="new-password" />
+        <div class="hint">* 비밀번호를 다시 입력해주세요</div>
+
+        <!-- ✅ 이름 입력 추가 -->
+        <label>이름</label>
+        <input id="name" type="text" placeholder="이름" autocomplete="name" />
+
+        <!-- ✅ 동의 체크박스(사진2 구조) -->
+        <div class="agreeBox">
+          <div class="agreeRow">
+            <input id="agreeAll" type="checkbox" />
+            <div class="agreeLabel">모두 동의합니다</div>
+          </div>
+
+          <div class="agreeRow">
+            <input id="agreeAge" type="checkbox" />
+            <div class="agreeLabel">[필수] 만 14세 이상입니다</div>
+          </div>
+
+          <div class="agreeRow">
+            <input id="agreeTerms" type="checkbox" />
+            <div class="agreeLabel">
+              [필수] <span class="termLink" id="toggleTerms">최종이용자 이용약관</span>에 동의합니다
+              <div class="termBody" id="termsBody">
+[최종이용자 이용약관] (요약/샘플)
+1. 본 서비스는 사용자가 입력한 정보(매출/비용 등)를 기반으로 세금 및 지표를 추정하여 제공합니다.
+2. 제공되는 결과는 참고용 추정치이며, 실제 세무 신고·납부 결과와 차이가 발생할 수 있습니다.
+3. 사용자는 입력값의 정확성에 대한 책임을 가지며, 서비스 제공자는 해당 입력값의 진실성을 보증하지 않습니다.
+4. 서비스 이용 과정에서 발생하는 분쟁은 관련 법령 및 약관에 따릅니다.
+
+※ 실제 서비스 운영 시 변호사/노무사/세무사 검토 문구로 교체 권장
+              </div>
+            </div>
+          </div>
+
+          <div class="agreeRow">
+            <input id="agreePrivacy" type="checkbox" />
+            <div class="agreeLabel">
+              [필수] <span class="termLink" id="togglePrivacy">개인정보 수집 및 이용</span>에 동의합니다
+              <div class="termBody" id="privacyBody">
+[개인정보 수집 및 이용] (요약/샘플)
+- 수집 항목: 이메일, 비밀번호(해시 처리), 이름(선택 또는 필수 운영 정책에 따름)
+- 이용 목적: 회원 식별/가입 처리, 로그인 인증, 회원 기록(계산 결과/저장 데이터) 제공
+- 보관 기간: 회원 탈퇴 시까지(또는 관련 법령에 따른 보관 의무 기간)
+- 제3자 제공: 원칙적으로 제공하지 않음(단, 법령에 따른 경우 예외)
+- 처리 위탁: 서비스 운영에 필요한 경우 위탁 가능(위탁 시 고지)
+
+※ 실제 서비스 운영 시 개인정보처리방침 전문으로 교체 권장
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ✅ API Base URL 숨김 유지 -->
+        <input id="apiBase" type="hidden" value="http://127.0.0.1:8000" />
+
+        <div class="btnRow">
+          <button id="btnRegister" class="btn btnPrimary" type="button">회원가입</button>
+          <button id="btnGoLogin" class="btn btnGhost" type="button">로그인 화면으로</button>
+        </div>
+
+        <div class="msg" id="msgBox"></div>
+
+        <div class="foot">
+          <span>가입 후 자동 로그인 없이 로그인 화면으로 이동합니다.</span>
+          <a href="./login.html">이미 계정이 있어요</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

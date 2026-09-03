@@ -1,0 +1,389 @@
+{
+  "$defs": {
+    "Action": {
+      "properties": {
+        "priority": {
+          "title": "Priority",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "why": {
+          "title": "Why",
+          "type": "string"
+        },
+        "how": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "How",
+          "type": "array"
+        },
+        "kpi_to_track": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Kpi To Track",
+          "type": "array"
+        }
+      },
+      "required": [
+        "priority",
+        "title",
+        "why"
+      ],
+      "title": "Action",
+      "type": "object"
+    },
+    "BenchmarkItem": {
+      "properties": {
+        "metric": {
+          "enum": [
+            "COST_RATIO",
+            "LABOR_RATIO",
+            "MATERIAL_RATIO",
+            "RENT_RATIO",
+            "OTHER_RATIO",
+            "PROFIT_RATIO",
+            "AVG_REVENUE_ANNUAL",
+            "SALES_GROWTH_YOY",
+            "AVG_TICKET_DINEIN",
+            "AVG_TICKET_DELIVERY"
+          ],
+          "title": "Metric",
+          "type": "string"
+        },
+        "p25": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "P25"
+        },
+        "p50": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "P50"
+        },
+        "p75": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "P75"
+        },
+        "my_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "My Value"
+        },
+        "diff_pp": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Diff Pp"
+        },
+        "level": {
+          "default": "UNKNOWN",
+          "title": "Level",
+          "type": "string"
+        }
+      },
+      "required": [
+        "metric"
+      ],
+      "title": "BenchmarkItem",
+      "type": "object"
+    },
+    "Benchmarks": {
+      "properties": {
+        "version_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version Key"
+        },
+        "region_code": {
+          "title": "Region Code",
+          "type": "string"
+        },
+        "size_band": {
+          "title": "Size Band",
+          "type": "string"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/BenchmarkItem"
+          },
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "region_code",
+        "size_band",
+        "items"
+      ],
+      "title": "Benchmarks",
+      "type": "object"
+    },
+    "ExecutiveSummary": {
+      "properties": {
+        "headline": {
+          "title": "Headline",
+          "type": "string"
+        },
+        "summary": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Summary",
+          "type": "array"
+        }
+      },
+      "required": [
+        "headline",
+        "summary"
+      ],
+      "title": "ExecutiveSummary",
+      "type": "object"
+    },
+    "KpiCard": {
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "number"
+        },
+        "unit": {
+          "title": "Unit",
+          "type": "string"
+        },
+        "level": {
+          "title": "Level",
+          "type": "string"
+        },
+        "comment": {
+          "title": "Comment",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "label",
+        "value",
+        "unit",
+        "level",
+        "comment"
+      ],
+      "title": "KpiCard",
+      "type": "object"
+    },
+    "Risk": {
+      "properties": {
+        "score_100": {
+          "title": "Score 100",
+          "type": "integer"
+        },
+        "grade": {
+          "title": "Grade",
+          "type": "string"
+        },
+        "drivers": {
+          "items": {
+            "$ref": "#/$defs/RiskDriver"
+          },
+          "title": "Drivers",
+          "type": "array"
+        }
+      },
+      "required": [
+        "score_100",
+        "grade",
+        "drivers"
+      ],
+      "title": "Risk",
+      "type": "object"
+    },
+    "RiskDriver": {
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "detail": {
+          "title": "Detail",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "title",
+        "detail"
+      ],
+      "title": "RiskDriver",
+      "type": "object"
+    },
+    "TaxBrief": {
+      "properties": {
+        "vat": {
+          "$ref": "#/$defs/TaxBriefVat"
+        },
+        "income_tax": {
+          "$ref": "#/$defs/TaxBriefIncomeTax"
+        },
+        "insurance": {
+          "$ref": "#/$defs/TaxBriefInsurance"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "vat",
+        "income_tax",
+        "insurance",
+        "notes"
+      ],
+      "title": "TaxBrief",
+      "type": "object"
+    },
+    "TaxBriefIncomeTax": {
+      "properties": {
+        "due_year": {
+          "title": "Due Year",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "due_year"
+      ],
+      "title": "TaxBriefIncomeTax",
+      "type": "object"
+    },
+    "TaxBriefInsurance": {
+      "properties": {
+        "employer_year": {
+          "title": "Employer Year",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "employer_year"
+      ],
+      "title": "TaxBriefInsurance",
+      "type": "object"
+    },
+    "TaxBriefVat": {
+      "properties": {
+        "due_month": {
+          "title": "Due Month",
+          "type": "integer"
+        },
+        "due_year": {
+          "title": "Due Year",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "due_month",
+        "due_year"
+      ],
+      "title": "TaxBriefVat",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "executive_summary": {
+      "$ref": "#/$defs/ExecutiveSummary"
+    },
+    "kpi_cards": {
+      "items": {
+        "$ref": "#/$defs/KpiCard"
+      },
+      "title": "Kpi Cards",
+      "type": "array"
+    },
+    "benchmarks": {
+      "$ref": "#/$defs/Benchmarks"
+    },
+    "risk": {
+      "$ref": "#/$defs/Risk"
+    },
+    "tax_brief": {
+      "$ref": "#/$defs/TaxBrief"
+    },
+    "actions": {
+      "items": {
+        "$ref": "#/$defs/Action"
+      },
+      "title": "Actions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "executive_summary",
+    "kpi_cards",
+    "benchmarks",
+    "risk",
+    "tax_brief",
+    "actions"
+  ],
+  "title": "AnalysisV1",
+  "type": "object"
+}

@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TS (tax secretary) — 입력하면 바로, 세금·위험도를 한눈에</title>
+  <meta name="description" content="TS(tax secretary)는 음식점 사장님의 월 매출/비용 입력값 기준으로 세금을 추정하고, 업종 평균 대비 운영 위험을 분석해 세무사처럼 코칭 인사이트를 제공합니다." />
+
+  <link rel="stylesheet" as="style" crossorigin
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+
+  <style>
+    :root{
+      --bg: #f7f8fb;
+      --card: #ffffff;
+      --line: rgba(15, 23, 42, .08);
+      --text: #0b1220;
+      --muted: rgba(11,18,32,.62);
+
+      --primary: #2F6FED;
+      --primary-2: #1447B8;
+      --success: #16a34a;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+
+      --shadow: 0 18px 55px rgba(15, 23, 42, .10);
+      --shadow-soft: 0 10px 30px rgba(15, 23, 42, .08);
+
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+
+      --container: 1180px;
+
+      --font: "Pretendard", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Apple SD Gothic Neo", "Noto Sans KR", Arial, "Helvetica Neue", sans-serif;
+      --font-display: "Pretendard", ui-sans-serif, system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: var(--font);
+      color: var(--text);
+      background: var(--bg);
+      overflow-x:hidden;
+    }
+
+    .brand, .btn, .visual-value, .stat-value, .phone-kpi-value, .process-num, .eyebrow-line{
+      font-family: var(--font-display);
+    }
+
+    a{ color:inherit; text-decoration:none; }
+    .container{ width:min(var(--container), calc(100% - 40px)); margin:0 auto; }
+
+    /* ---------- Header ---------- */
+    header{
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      background: rgba(247,248,251,.82);
+      border-bottom: 1px solid var(--line);
+    }
+    .nav{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding: 16px 0;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+    .logo{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      flex:0 0 auto;
+    }
+    .logo img{ display:block; width:100%; height:100%; object-fit:cover; border-radius:inherit; }
+    .logo-main{ width: 34px; height:34px; border-radius: 12px; box-shadow: 0 10px 20px rgba(47,111,237,.22); }
+    .logo-mini{ width:24px; height:24px; border-radius:9px; box-shadow:none; }
+    .logo-footer{ width:30px; height:30px; border-radius:12px; box-shadow:none; }
+
+    .navlinks{ display:flex; gap: 22px; color: rgba(11,18,32,.68); font-weight: 700; font-size: 14px; }
+    .navlinks a{ padding: 8px 2px; transition: color .2s ease; }
+    .navlinks a:hover{ color: var(--text); }
+
+    .navcta{ display:flex; gap:10px; align-items:center; }
+    .btn{
+      border: 1px solid var(--line);
+      background: #fff;
+      color: rgba(11,18,32,.9);
+      padding: 11px 18px;
+      border-radius: 14px;
+      font-weight: 700;
+      font-size: 14px;
+      white-space: nowrap;
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+      display:inline-flex; align-items:center; gap:8px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .btn:hover{ transform: translateY(-1px); box-shadow: 0 10px 26px rgba(15,23,42,.10); }
+    .btn.primary{
+      border-color: var(--primary);
+      background: var(--primary);
+      color:#fff;
+      box-shadow: 0 14px 30px rgba(47,111,237,.28);
+    }
+    .btn.primary:hover{ background: var(--primary-2); box-shadow: 0 18px 40px rgba(47,111,237,.34); }
+    .btn.outline{ background: #fff; border-color: rgba(15,23,42,.16); }
+    .btn.sm{ padding: 9px 14px; font-size: 13px; }
+
+    .hamburger{
+      display:none;
+      width:42px; height:42px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #fff;
+      cursor:pointer;
+    }
+
+    /* ---------- Hero ---------- */
+    .hero{ padding: 56px 0 20px; }
+    .hero-grid{
+      display:grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap: 40px;
+      align-items: center;
+    }
+    .eyebrow-line{
+      display:inline-block;
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: -.1px;
+      margin-bottom: 12px;
+    }
+    h1{
+      margin: 0 0 14px;
+      font-size: clamp(32px, 3.6vw, 46px);
+      line-height: 1.18;
+      letter-spacing: -1.1px;
+      font-weight: 800;
+    }
+    h2{ font-weight: 800; }
+    h3{ font-weight: 700; }
+    .lead{
+      margin: 0 0 22px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.7;
+    }
+    .cta-row{ display:flex; gap: 10px; flex-wrap:wrap; align-items:center; margin: 0 0 16px; }
+    .subnote{ display:flex; gap: 8px; align-items:center; color: rgba(11,18,32,.56); font-size: 13.5px; font-weight: 600; }
+    .subnote .ic{ width: 18px; height: 18px; border-radius: 999px; background: rgba(22,163,74,.12); display:grid; place-items:center; flex: 0 0 auto; }
+
+    /* ---------- Hero visual ---------- */
+    .hero-visual{ position:relative; padding: 0; }
+    .hero-illustration-img{ display:block; width:100%; height:auto; }
+    .visual-card{
+      background:#fff;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      max-width: 400px;
+      margin: 0 auto;
+      position: relative;
+    }
+    .visual-card::before{
+      content:"";
+      position:absolute;
+      inset: -12px;
+      background: linear-gradient(180deg, #eef1f8, #e2e7f2);
+      border: 1px solid var(--line);
+      border-radius: calc(var(--radius-lg) + 12px);
+      z-index:-1;
+      box-shadow: var(--shadow-soft);
+    }
+    .visual-row{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px; }
+    .visual-label{ font-size:13px; color: var(--muted); font-weight:700; }
+    .visual-value{ font-size: 22px; font-weight: 700; letter-spacing:-.5px; }
+    .visual-tag{
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      background: rgba(15,23,42,.05); border-radius: 999px; padding: 3px 8px; margin-left:6px; vertical-align: middle;
+    }
+    .visual-chart{ display:block; width:100%; height: 96px; }
+    .visual-stats{ display:flex; gap:10px; margin-top: 16px; max-width: 400px; margin-left:auto; margin-right:auto; }
+    .stat-chip{
+      flex:1; background:#fff; border:1px solid var(--line); border-radius: 16px;
+      padding: 12px 10px; text-align:center; box-shadow: var(--shadow-soft);
+    }
+    .stat-label{ font-size: 11px; color: var(--muted); font-weight:700; margin-bottom:4px; }
+    .stat-value{ font-size: 18px; font-weight: 700; }
+    .stat-sub{ font-size: 10.5px; color: var(--muted); margin-top:2px; }
+    .visual-deco{ position:absolute; border-radius:999px; z-index:2; opacity:1; }
+    .visual-deco.pie{
+      width:82px; height:82px; right:-30px; top:-52px;
+      background: conic-gradient(var(--primary) 0deg 250deg, rgba(163,193,247,.95) 250deg 360deg);
+      box-shadow: var(--shadow-soft), inset 0 -10px 16px rgba(255,255,255,.30);
+    }
+    .visual-bars{
+      position:absolute; right:-8px; bottom:-20px; z-index:2;
+      display:flex; align-items:flex-end; gap:8px; height:96px;
+    }
+    .visual-bars i{ display:block; width:17px; border-radius:8px 8px 0 0; box-shadow: var(--shadow-soft); }
+    .visual-bars i:nth-child(1){ background: rgba(47,111,237,.35); }
+    .visual-bars i:nth-child(2){ background: rgba(47,111,237,.62); }
+    .visual-bars i:nth-child(3){ background: var(--primary); }
+    .visual-card{ position:relative; z-index:1; }
+    .visual-stats{ position:relative; z-index:1; }
+
+    /* ---------- Sections ---------- */
+    section{ padding: 30px 0; }
+    .section-head{ text-align:center; margin-bottom: 30px; }
+    .eyebrow{ display:block; color: var(--primary); font-weight: 600; font-size: 13px; margin-bottom: 10px; }
+    .section-head h2{ margin: 0; font-size: clamp(22px, 2.4vw, 30px); letter-spacing: -.6px; }
+
+    .row-3{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 26px; text-align:center; }
+    .row-3 .why-icon{
+      width: 64px; height:64px; margin: 0 auto 16px;
+      display:grid; place-items:center;
+    }
+    .why-icon img, .show-icon img{ width:100%; height:100%; object-fit:contain; }
+    .row-3 h3{ margin: 0 0 8px; font-size: 17px; letter-spacing:-.3px; }
+    .row-3 p{ margin:0; color: var(--muted); font-size: 14px; line-height:1.6; }
+
+    .row-4{ display:grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .show-card{
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--line);
+      background: #fff;
+      box-shadow: var(--shadow-soft);
+      padding: 22px 16px;
+      text-align:center;
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .show-card:hover{ transform: translateY(-3px); box-shadow: 0 18px 40px rgba(15,23,42,.10); }
+    .show-icon{
+      width: 52px; height:52px; margin: 0 auto 14px;
+      display:grid; place-items:center;
+    }
+    .show-card h3{ margin: 0 0 6px; font-size: 15.5px; }
+    .show-card p{ margin:0; color: var(--muted); font-size: 13px; line-height:1.55; }
+
+    /* ---------- Dark CTA ---------- */
+    .cta-dark{
+      background: #081830;
+      border-radius: var(--radius-lg);
+      color: #fff;
+      overflow:hidden;
+      padding: 0;
+    }
+    .cta-dark-inner{
+      display:grid; grid-template-columns: 1fr 1fr; align-items:center; gap: 20px;
+      padding: 46px 40px;
+    }
+    .cta-dark h2{ margin:0 0 10px; font-size: clamp(24px,2.6vw,32px); line-height:1.25; letter-spacing:-.6px; }
+    .cta-dark p{ margin:0 0 22px; color: rgba(255,255,255,.68); font-size:15px; }
+    .store-badges{ display:flex; gap:14px; margin-top:20px; flex-wrap:wrap; align-items:center; }
+    .store-badges img{ height:54px; width:auto; display:block; }
+
+    .phone-mock{ position:relative; display:flex; justify-content:center; }
+    .phone-mock img.coin-phone-img{ width:100%; max-width:560px; height:auto; display:block; }
+
+    /* ---------- Trust logos ---------- */
+    .trustlogos{ text-align:center; }
+    .trustlogos .section-head p{ margin:0 auto; max-width:640px; color: var(--muted); font-size:14px; }
+    .logo-chip-row{ display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap: 34px; margin-top: 26px; }
+    .logo-chip-row img{ height:26px; width:auto; opacity:.55; filter:grayscale(1); transition: opacity .18s ease; }
+    .logo-chip-row img:hover{ opacity:.85; }
+
+    /* ---------- Process ---------- */
+    .process-row{ display:flex; align-items:center; gap: 10px; }
+    .process-step{
+      flex:1; border-radius: var(--radius-lg); border:1px solid var(--line); background:#fff;
+      box-shadow: var(--shadow-soft); padding: 22px; text-align:center;
+    }
+    .process-num{
+      width: 34px; height:34px; border-radius:999px; background: var(--primary); color:#fff;
+      display:grid; place-items:center; font-weight:700; margin: 0 auto 12px; font-size:14px;
+    }
+    .process-step h3{ margin:0 0 6px; font-size:15.5px; }
+    .process-step p{ margin:0; color: var(--muted); font-size:13px; }
+    .process-arrow{ color: rgba(15,23,42,.28); font-size: 20px; flex: 0 0 auto; }
+
+    /* ---------- FAQ ---------- */
+    .faq{
+      border-radius: var(--radius-lg); border: 1px solid var(--line); background: #fff;
+      box-shadow: var(--shadow-soft); overflow:hidden;
+    }
+    details{ border-top: 1px solid var(--line); padding: 0 18px; }
+    details:first-child{ border-top:none; }
+    summary{
+      list-style:none; cursor:pointer; padding: 17px 0; display:flex; align-items:center;
+      justify-content:space-between; gap: 12px; font-weight: 600; letter-spacing: -.2px; font-size:14.5px;
+    }
+    summary::-webkit-details-marker{ display:none; }
+    .faq p{ margin: 0 0 17px; color: var(--muted); line-height:1.7; font-size: 14px; }
+    .chev{ width: 26px; height:26px; border-radius: 999px; border: 1px solid var(--line); display:grid; place-items:center; transition: transform .18s ease; flex: 0 0 auto; }
+    details[open] .chev{ transform: rotate(180deg); }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+
+    /* ---------- Final CTA ---------- */
+    .final-cta{
+      border-radius: var(--radius-lg);
+      background: linear-gradient(135deg, rgba(47,111,237,.07), rgba(47,111,237,.015));
+      border: 1px solid rgba(47,111,237,.14);
+      padding: 40px 56px;
+      display:flex; align-items:center; gap: 40px; flex-wrap:wrap;
+    }
+    .final-cta-icon{ width: 190px; height:auto; flex: 0 0 auto; display:block; }
+    .final-cta-text{ flex: 1 1 320px; }
+    .final-cta-text h3{ margin:0 0 20px; font-size: 28px; line-height:1.3; letter-spacing:-.5px; }
+    .final-cta-text .fine{ margin-top:12px; font-size:13px; color: var(--muted); }
+
+    /* ---------- Footer ---------- */
+    footer{ padding: 40px 0 44px; color: var(--muted); border-top: 1px solid var(--line); margin-top: 20px; }
+    .footer-grid{ display:grid; grid-template-columns: 1.4fr .8fr .8fr .8fr; gap: 24px; }
+    .footer-grid h4{ margin:0 0 12px; font-size:13px; color: rgba(11,18,32,.85); }
+    .footer-grid ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:9px; }
+    .footer-grid a{ font-size: 13.5px; color: var(--muted); }
+    .footer-grid a:hover{ color: var(--text); }
+    .foot-tagline{ font-size:13px; margin: 10px 0 16px; max-width: 260px; line-height:1.6; }
+    .foot-bottom{ margin-top: 30px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 12px; }
+
+    /* Animations */
+    .reveal{ opacity: 0; transform: translateY(10px); transition: opacity .55s ease, transform .55s ease; }
+    .reveal.in{ opacity: 1; transform: translateY(0); }
+
+    /* Responsive */
+    @media (max-width: 980px){
+      .hero-grid{ grid-template-columns: 1fr; }
+      .hero-visual{ max-width: 460px; margin: 0 auto; }
+      .row-4{ grid-template-columns: repeat(2, 1fr); }
+      .cta-dark-inner{ grid-template-columns: 1fr; padding: 36px 26px; }
+      .footer-grid{ grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 720px){
+      .navlinks{ display:none; }
+      .hamburger{ display:grid; place-items:center; }
+      .row-3{ grid-template-columns: 1fr; gap: 24px; }
+      .row-4{ grid-template-columns: 1fr; }
+      .process-row{ flex-direction:column; }
+      .process-arrow{ transform: rotate(90deg); }
+      .final-cta{ padding: 26px; }
+      .footer-grid{ grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="container">
+      <div class="nav">
+        <a class="brand" href="#top" aria-label="TS 홈">
+          <span class="logo logo-main" aria-hidden="true"><img src="./ts-logo.png" alt="TS 로고" /></span>
+          <span>TS <span style="opacity:.65; font-weight:700;">(tax secretary)</span></span>
+        </a>
+
+        <nav class="navlinks" aria-label="주요 메뉴">
+          <a href="#features">기능</a>
+          <a href="#how">진행 방법</a>
+          <a href="#faq">FAQ</a>
+        </nav>
+
+        <div class="navcta">
+          <button class="btn primary" id="btnStartTop" type="button">무료로 시작하기</button>
+          <button class="hamburger" id="btnMenu" type="button" aria-label="메뉴 열기">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M5 7h14M5 12h14M5 17h14" stroke="rgba(11,18,32,.82)" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- Hero -->
+    <div class="hero">
+      <div class="container">
+        <div class="hero-grid">
+          <div class="reveal">
+            <span class="eyebrow-line">세금 계산 · 업종 비교 · 위험 진단</span>
+            <h1>입력하면 바로,<br/><span style="color:var(--primary);">세금·위험도</span>를 한눈에</h1>
+            <p class="lead">
+              월 매출·비용을 입력하면 예상 세금과 업종 평균 대비 위험도를
+              쉽게 확인할 수 있어요.
+            </p>
+
+            <div class="cta-row">
+              <button class="btn primary" id="btnStartHero" type="button">
+                무료로 시작하기
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M9 18l6-6-6-6" stroke="rgba(255,255,255,.95)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <button class="btn outline" id="btnSampleHero" type="button">예시 결과 보기</button>
+            </div>
+
+            <div class="subnote">
+              <span class="ic" aria-hidden="true">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="rgba(22,163,74,.95)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              회원 가입 없이 바로 사용
+            </div>
+          </div>
+
+          <!-- Visual -->
+          <div class="hero-visual reveal" aria-label="예시 결과 미리보기">
+            <img class="hero-illustration-img" src="./hero-illustration.png" alt="TS 대시보드 예시: 예상 세금 288,635원, 위험도 B, 신뢰도 74%, 업종 비교 상위 25%" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Why TS -->
+    <section id="why">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">왜 TS를 써야 할까요?</span>
+          <h2>숫자로 보면, 선택이 쉬워집니다.</h2>
+        </div>
+        <div class="row-3">
+          <div class="reveal">
+            <div class="why-icon"><img src="./icon-calc.png" alt="" /></div>
+            <h3>예상 세금 확인</h3>
+            <p>입력만 하면 예상 세금을<br/>바로 확인할 수 있어요.</p>
+          </div>
+          <div class="reveal">
+            <div class="why-icon"><img src="./icon-growth.png" alt="" /></div>
+            <h3>업종 평균 비교</h3>
+            <p>내 가게의 위치를 업종 평균과<br/>쉽게 비교할 수 있어요.</p>
+          </div>
+          <div class="reveal">
+            <div class="why-icon"><img src="./icon-bulb.png" alt="" /></div>
+            <h3>지금 할 일 추천</h3>
+            <p>위험 신호와 우선순위 행동을<br/>알려드려요.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- What TS shows -->
+    <section id="features">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">주요 분석 항목</span>
+          <h2>TS가 보여주는 것</h2>
+        </div>
+        <div class="row-4">
+          <div class="show-card reveal">
+            <div class="show-icon"><img src="./icon-tax.png" alt="" /></div>
+            <h3>예상 세금</h3>
+            <p>세금 항목별 예상 금액을 간단히 확인</p>
+          </div>
+          <div class="show-card reveal">
+            <div class="show-icon"><img src="./icon-pie.png" alt="" /></div>
+            <h3>위험 진단</h3>
+            <p>재무 상태와 위험 신호를 종합 분석</p>
+          </div>
+          <div class="show-card reveal">
+            <div class="show-icon"><img src="./icon-bars.png" alt="" /></div>
+            <h3>업종 비교</h3>
+            <p>업종 평균 대비 강점과 개선점을 확인</p>
+          </div>
+          <div class="show-card reveal">
+            <div class="show-icon"><img src="./icon-star.png" alt="" /></div>
+            <h3>행동 추천</h3>
+            <p>우선순위 높은 행동을 알려드려요.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Dark CTA with phone mock -->
+    <section>
+      <div class="container">
+        <div class="cta-dark reveal">
+          <div class="cta-dark-inner">
+            <div>
+              <h2>매출은 나오는데<br/>왜 돈이 안 남을까요?</h2>
+              <p>TS가 원인을 찾아드릴게요.</p>
+              <button class="btn primary" id="btnAnalyzeNow" type="button">
+                지금 분석하기
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 18l6-6-6-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="store-badges">
+                <img src="./badge-appstore.png" alt="Download on the App Store" />
+                <img src="./badge-googleplay.png" alt="Get it on Google Play" />
+              </div>
+            </div>
+
+            <div class="phone-mock">
+              <img class="coin-phone-img" src="./coin-phone.png" alt="TS 앱 화면: 예상 월 순이익 1,286,000원(전월 대비 +8.4%), 예상 세무담 점수 38/100, 위험도 등급 B(주의), Confidence 74%" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Trust data sources -->
+    <section id="trust">
+      <div class="container trustlogos">
+        <div class="section-head reveal">
+          <span class="eyebrow">데이터 근거</span>
+          <h2>신뢰할 수 있는 공공·공식 데이터로 분석합니다</h2>
+          <p style="margin-top:10px;">특정 카드사·기관과의 제휴가 아니라, 공개된 공식 통계·고시 자료를 계산 기준으로 사용합니다.</p>
+        </div>
+        <div class="logo-chip-row reveal">
+          <img src="./logo-nts.png" alt="국세청" />
+          <img src="./logo-shinhan.png" alt="신한카드" />
+          <img src="./logo-nh.png" alt="NH농협카드" />
+          <img src="./logo-lotte.png" alt="LOTTE CARD" />
+          <img src="./logo-samsung.png" alt="Samsung Card" />
+          <img src="./logo-hyundai.png" alt="Hyundai Card" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Process -->
+    <section id="how">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">진행 방법</span>
+          <h2>분석은 이렇게 진행돼요</h2>
+        </div>
+        <div class="process-row reveal">
+          <div class="process-step">
+            <div class="process-num">1</div>
+            <h3>데이터 입력</h3>
+            <p>엑셀 업로드 또는<br/>간단히 입력해요.</p>
+          </div>
+          <div class="process-arrow" aria-hidden="true">›</div>
+          <div class="process-step">
+            <div class="process-num">2</div>
+            <h3>자동 분석</h3>
+            <p>세금 계산과 업종 비교를<br/>자동으로 분석해요.</p>
+          </div>
+          <div class="process-arrow" aria-hidden="true">›</div>
+          <div class="process-step">
+            <div class="process-num">3</div>
+            <h3>결과 확인</h3>
+            <p>핵심 요약과 행동 추천을<br/>바로 확인하세요.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section>
+      <div class="container">
+        <div class="final-cta reveal">
+          <img class="final-cta-icon" src="./icon-checklist-target.png" alt="" aria-hidden="true" />
+          <div class="final-cta-text">
+            <h3>지금 바로, 내 가게의 세금과 위험도를<br/>무료로 확인해보세요</h3>
+            <button class="btn primary" id="btnStartBottom" type="button">
+              무료로 시작하기
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 18l6-6-6-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="fine">회원 가입 없이 · 1분이면 충분해요</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">FAQ</span>
+          <h2>자주 묻는 질문</h2>
+        </div>
+
+        <div class="faq reveal" role="region" aria-label="FAQ 아코디언">
+          <details open>
+            <summary>
+              TS 결과는 확정 세액인가요?
+              <span class="chev" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="rgba(11,18,32,.80)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </summary>
+            <p>아니요. TS는 <b>입력값 기준(가정)</b>으로 세금을 <b>추정</b>합니다. 확정 세액은 실제 신고/상담을 통해 확인이 필요합니다.</p>
+          </details>
+          <details>
+            <summary>
+              게스트 모드는 무엇이 다른가요?
+              <span class="chev" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="rgba(11,18,32,.80)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </summary>
+            <p>게스트 모드는 로그인 없이 체험 가능하며, 계산 결과 구조는 동일하지만 <b>저장하지 않습니다</b>.</p>
+          </details>
+          <details>
+            <summary>
+              무료 플랜 제한이 있나요?
+              <span class="chev" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="rgba(11,18,32,.80)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </summary>
+            <p>현재 정책은 <b>무료 제한을 두지 않는 방향</b>입니다.</p>
+          </details>
+          <details>
+            <summary>
+              업종 분류는 어떻게 하나요?
+              <span class="chev" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="rgba(11,18,32,.80)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </summary>
+            <p>초기 버전은 “음식점 전체”로 시작하고, 서버에서 <span class="mono">business_type_code</span>를 검증한 뒤 점진적으로 세분화합니다.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="reveal">
+          <div class="brand" style="gap:10px; margin-bottom:10px;">
+            <span class="logo logo-footer" aria-hidden="true"><img src="./ts-logo.png" alt="TS 로고" /></span>
+            <span>TS (tax secretary)</span>
+          </div>
+          <p class="foot-tagline">사장님의 세금과 경영을 더 쉽게, TS가 함께합니다.</p>
+        </div>
+        <div class="reveal">
+          <h4>서비스</h4>
+          <ul>
+            <li><a href="#features">기능</a></li>
+            <li><a href="#how">진행 방법</a></li>
+            <li><a href="#faq">FAQ</a></li>
+          </ul>
+        </div>
+        <div class="reveal">
+          <h4>지원</h4>
+          <ul>
+            <li><a href="#faq">고객센터</a></li>
+            <li><a href="mailto:hello@ts-tax.app">문의하기</a></li>
+          </ul>
+        </div>
+        <div class="reveal">
+          <h4>회사</h4>
+          <ul>
+            <li><a href="#top">회사 소개</a></li>
+            <li><a href="#top">이용 약관</a></li>
+            <li><a href="#top">개인정보 처리방침</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="foot-bottom reveal">
+        <b>면책</b>: TS는 입력값 기준(가정)으로 산출한 추정 결과를 제공합니다. 확정 세액 및 신고 판단은 세무 전문가 상담 또는 실제 신고 자료를 통해 확인이 필요합니다.<br/>
+        <span style="opacity:.75;">© <span id="year"></span> TS. All rights reserved.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const $ = (sel) => document.querySelector(sel);
+    $("#year").textContent = new Date().getFullYear();
+
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+      }
+    }, { threshold: 0.10 });
+    document.querySelectorAll(".reveal").forEach(el => io.observe(el));
+
+    function goStart(){ window.location.href = "./login.html"; }
+    function goSample(){
+      document.querySelector(".hero-visual")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    ["#btnStartTop","#btnStartHero","#btnStartBottom","#btnAnalyzeNow"].forEach(id=>{
+      const el = $(id);
+      if (el) el.addEventListener("click", goStart);
+    });
+    const btnSample = $("#btnSampleHero");
+    if (btnSample) btnSample.addEventListener("click", goSample);
+
+    const btnMenu = $("#btnMenu");
+    if (btnMenu){
+      btnMenu.addEventListener("click", () => {
+        window.location.href = "./login.html";
+      });
+    }
+  </script>
+</body>
+</html>

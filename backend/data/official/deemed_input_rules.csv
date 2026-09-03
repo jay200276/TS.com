@@ -1,0 +1,4 @@
+﻿year_applied,business_entity,industry_group,tax_base_band,rate_numerator,rate_denominator,limit_ratio,source_title,source_url
+2026,PERSONAL,FOODSVC,LE_100M,9,109,0.50,"의제매입세액공제 고시/법령","https://www.law.go.kr/"
+2026,PERSONAL,FOODSVC,100M_200M,8,108,0.50,"의제매입세액공제 고시/법령","https://www.law.go.kr/"
+2026,PERSONAL,FOODSVC,GT_200M,8,108,0.40,"의제매입세액공제 고시/법령","https://www.law.go.kr/"

@@ -1,0 +1,1603 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TS (tax secretary) — 회원 계산</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root{
+      --bg:#eef5ff;
+      --panel:#ffffffcc;
+      --card:#ffffffd9;
+      --text:#0b1220;
+      --muted:rgba(11,18,32,.62);
+      --line:rgba(15,23,42,.12);
+      --shadow:0 18px 55px rgba(15,23,42,.10);
+      --shadow2:0 10px 30px rgba(15,23,42,.08);
+
+      --primary:#2EC5FF;
+      --primary2:#0D3EDB;
+      --navy:#182459;
+      --navy2:#0E1638;
+      --chip:#f2f6ff;
+      --warn-bg:rgba(255,171,0,.10);
+      --warn-line:rgba(255,171,0,.26);
+      --warn-text:#7a5400;
+
+      --good-bg:rgba(34,197,94,.12);
+      --good-text:#166534;
+      --warn2-bg:rgba(245,158,11,.14);
+      --warn2-text:#92400e;
+      --risk-bg:rgba(239,68,68,.12);
+      --risk-text:#991b1b;
+      --neutral-bg:rgba(148,163,184,.14);
+      --neutral-text:#475569;
+
+      --radius:18px;
+      --radius2:22px;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 420px at 40% 0%, rgba(26,109,255,.18), transparent 55%),
+        radial-gradient(900px 380px at 80% 10%, rgba(46,197,255,.16), transparent 55%),
+        linear-gradient(180deg, #edf5ff 0%, #f6f8ff 38%, #f7f9ff 100%);
+      min-height:100vh;
+    }
+    a{color:inherit; text-decoration:none}
+    button{font:inherit}
+    input, select{font:inherit}
+
+    .topbar{
+      position:sticky; top:0; z-index:10;
+      backdrop-filter: blur(14px);
+      background: rgba(246,248,255,.78);
+      border-bottom:1px solid var(--line);
+    }
+    .topbar-inner{
+      max-width:1160px;
+      margin:0 auto;
+      padding:14px 18px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:12px;
+      min-width: 260px;
+    }
+    .logo{
+      width:38px; height:38px; border-radius:12px;
+      overflow:hidden;
+      display:flex; align-items:center; justify-content:center;
+      box-shadow: 0 10px 22px rgba(26,109,255,.18);
+      flex:0 0 38px;
+      background: transparent;
+    }
+    .logo img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+    }
+    .brand-text{display:flex; flex-direction:column; line-height:1.1}
+    .brand-text .t1{font-weight:800; font-size:14px}
+    .brand-text .t2{font-size:12px; color:var(--muted); margin-top:3px}
+
+    .logout{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.7);
+      padding:8px 12px;
+      border-radius: 999px;
+      cursor:pointer;
+      box-shadow: 0 8px 18px rgba(15,23,42,.06);
+    }
+    .logout:hover{background:#fff}
+
+    .wrap{
+      max-width:1160px;
+      margin:0 auto;
+      padding:22px 18px 48px;
+    }
+    h1{
+      margin:18px 0 8px;
+      font-size:42px;
+      letter-spacing:-1.2px;
+    }
+    .subtitle{
+      color:var(--muted);
+      margin:0 0 18px;
+      font-size:14px;
+    }
+
+    .tabs-card{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.72);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius2);
+      overflow:visible;
+    }
+    .tabs{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      background: rgba(255,255,255,.55);
+      border-bottom:1px solid var(--line);
+    }
+    .tab{
+      padding:16px 18px;
+      font-weight:800;
+      letter-spacing:-0.3px;
+      border:none;
+      background:transparent;
+      cursor:pointer;
+      color: rgba(11,18,32,.78);
+    }
+    .tab.active{
+      color:#fff;
+      background: linear-gradient(135deg, var(--navy), var(--navy2));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.16);
+    }
+
+    .panel{ padding:18px; }
+
+    .section-title{
+      font-weight:800;
+      margin: 6px 0 12px;
+      color: rgba(11,18,32,.84);
+      font-size:13px;
+    }
+    .card{
+      background: rgba(255,255,255,.78);
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow2);
+      padding:14px;
+    }
+    .field{
+      padding:14px;
+      border:1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255,255,255,.82);
+    }
+    .field + .field{margin-top:12px}
+
+    .excel-preview-list{
+      margin-top:12px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      max-height:360px;
+      overflow-y:auto;
+    }
+    .excel-preview-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.7);
+      font-size:13px;
+    }
+    .excel-preview-row.is-error{ background:var(--risk-bg); border-color:transparent; color:var(--risk-text); }
+    .excel-preview-row.is-overwrite{ background:var(--warn2-bg); }
+    .excel-preview-row .epr-month{ font-weight:800; min-width:64px; }
+    .excel-preview-row .epr-detail{ flex:1; color:var(--muted); }
+    .excel-preview-row .epr-tag{
+      font-size:11px; font-weight:700; padding:3px 8px; border-radius:999px;
+      background:var(--chip); color:var(--muted); white-space:nowrap;
+    }
+    .excel-commit-row{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:8px 12px; border-radius:10px; font-size:13px;
+    }
+    .excel-commit-row.ok{ background:var(--good-bg); color:var(--good-text); }
+    .excel-commit-row.fail{ background:var(--risk-bg); color:var(--risk-text); }
+    .label{
+      font-size:12px;
+      color: rgba(11,18,32,.70);
+      margin-bottom:8px;
+      font-weight:700;
+    }
+    #selRegion,
+    #selIndustry,
+    #inpEmployees,
+    #selTaxpayerGuess{
+      font-weight:800;
+    }
+    .help{
+      margin-top:6px;
+      color: rgba(11,18,32,.56);
+      font-size:12px;
+      font-weight:700;
+      line-height:1.4;
+    }
+    .row{
+      display:grid;
+      grid-template-columns: 1.05fr 1fr 1fr;
+      gap:10px;
+    }
+    .row-2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    .row-3{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:10px;
+    }
+    .control{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      width:100%;
+      border:1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255,255,255,.92);
+      padding:12px 12px;
+      box-shadow: 0 6px 16px rgba(15,23,42,.05);
+    }
+    .control input, .control select{
+      border:none;
+      outline:none;
+      width:100%;
+      background:transparent;
+      font-size:14px;
+    }
+    .control .iconbtn{
+      border:none;
+      background: rgba(11,18,32,.06);
+      width:32px; height:32px;
+      border-radius: 12px;
+      cursor:pointer;
+      display:grid; place-items:center;
+    }
+
+    .money-line{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap:10px;
+      align-items:center;
+    }
+    .money-input{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      border:1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255,255,255,.92);
+      padding:12px 12px;
+      box-shadow: 0 6px 16px rgba(15,23,42,.05);
+    }
+    .money-input input{
+      border:none; outline:none;
+      width:100%;
+      background:transparent;
+      font-size:15px;
+      font-weight:800;
+      letter-spacing:-0.2px;
+    }
+    .money-unit{
+      color: rgba(11,18,32,.55);
+      font-size:12px;
+      font-weight:700;
+      padding-left:6px;
+      border-left:1px solid rgba(15,23,42,.10);
+    }
+    .quick-adds{
+      display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;
+    }
+    .chip{
+      border:1px solid rgba(26,109,255,.16);
+      background: rgba(26,109,255,.07);
+      color: rgba(11,18,32,.78);
+      padding:8px 10px;
+      border-radius: 999px;
+      cursor:pointer;
+      font-weight:800;
+      font-size:12px;
+    }
+    .chip:hover{background: rgba(26,109,255,.10)}
+
+    .info-strip{
+      margin-top:12px;
+      padding:12px 14px;
+      border-radius:14px;
+      background: rgba(26,109,255,.06);
+      border:1px solid rgba(26,109,255,.12);
+      color: rgba(11,18,32,.78);
+      font-size:12px;
+      font-weight:800;
+      line-height:1.5;
+    }
+
+    .warn-strip{
+      margin-top:12px;
+      padding:12px 14px;
+      border-radius:14px;
+      background: var(--warn-bg);
+      border:1px solid var(--warn-line);
+      color: var(--warn-text);
+      font-size:12px;
+      font-weight:900;
+      line-height:1.5;
+    }
+
+    .actions{
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      margin-top:14px;
+      flex-wrap:wrap;
+    }
+    .btn{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.82);
+      padding:10px 14px;
+      border-radius: 999px;
+      cursor:pointer;
+      font-weight:800;
+      box-shadow: 0 10px 22px rgba(15,23,42,.06);
+    }
+    .btn:hover{background:#fff}
+    .btn.primary{
+      border:none;
+      color:#fff;
+      background: linear-gradient(135deg, var(--navy), var(--navy2));
+      box-shadow: 0 18px 40px rgba(26,109,255,.22);
+    }
+    .btn.primary:hover{filter: brightness(1.03)}
+    .btn.ghost{
+      background: rgba(255,255,255,.45);
+    }
+    .btn-excel{
+      border:1px solid var(--line);
+      color:var(--text);
+      background:#fff;
+      box-shadow:none;
+    }
+    .btn-excel:hover{background:rgba(15,23,42,.03)}
+    .excel-upload-trigger{
+      display:flex; align-items:center; gap:14px; cursor:pointer; flex:1; min-width:240px;
+    }
+    .excel-file-icon{ width:40px; height:40px; object-fit:contain; flex:0 0 auto; }
+    .excel-upload-text{ min-width:0; }
+    .excel-file-name{ font-weight:800; color:var(--text); font-size:14px; }
+    .excel-file-hint{ margin-top:4px; font-size:12px; color:var(--muted); line-height:1.5; }
+
+    .excel-upload-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+
+    .summary-title{
+      margin:18px 0 10px;
+      font-weight:900;
+      font-size:14px;
+      color: rgba(11,18,32,.86);
+    }
+    .summary-grid{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:12px;
+    }
+    .summary-card{
+      background: rgba(255,255,255,.72);
+      border:1px solid var(--line);
+      border-radius: 18px;
+      padding:14px;
+      box-shadow: var(--shadow2);
+      min-height: 84px;
+    }
+    .summary-card .k{
+      font-size:12px; color: rgba(11,18,32,.62);
+      font-weight:800;
+      margin-bottom:8px;
+      display:flex; align-items:center; justify-content:space-between; gap:8px;
+    }
+    .summary-card .v{
+      font-size:16px;
+      font-weight:900;
+      letter-spacing:-0.2px;
+    }
+    .pill{
+      width:28px; height:28px;
+      display:grid; place-items:center;
+      border-radius: 999px;
+      background: rgba(11,18,32,.06);
+      color: rgba(11,18,32,.55);
+      font-size:14px;
+      font-weight:900;
+    }
+
+    .insight-row{
+      margin-top:12px;
+      display:grid;
+      grid-template-columns: 240px 1fr;
+      gap:12px;
+    }
+    .insight-box{
+      background: rgba(255,255,255,.72);
+      border:1px solid var(--line);
+      border-radius: 18px;
+      padding:14px;
+      box-shadow: var(--shadow2);
+      min-height: 74px;
+    }
+    .insight-box .k{
+      font-size:12px; color: rgba(11,18,32,.62);
+      font-weight:800;
+      margin-bottom:8px;
+    }
+    .insight-box .v{
+      font-size:13px; color: rgba(11,18,32,.84);
+      font-weight:800;
+      line-height:1.35;
+    }
+
+    .tag-area{
+      margin-top:12px;
+      background: rgba(255,255,255,.72);
+      border:1px solid var(--line);
+      border-radius: 18px;
+      padding:14px;
+      box-shadow: var(--shadow2);
+    }
+    .tag-area .k{
+      font-size:12px; color: rgba(11,18,32,.62);
+      font-weight:900;
+      margin-bottom:10px;
+    }
+    .tagline{
+      display:flex; gap:8px; flex-wrap:wrap;
+    }
+    .tag{
+      background: var(--chip);
+      border:1px solid rgba(15,23,42,.10);
+      border-radius: 999px;
+      padding:6px 10px;
+      font-size:12px;
+      font-weight:900;
+      color: rgba(11,18,32,.72);
+    }
+    .disclaimer{
+      margin-top:10px;
+      color: rgba(11,18,32,.58);
+      font-size:12px;
+      font-weight:800;
+    }
+
+    .result-grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:12px;
+    }
+    .result-card{
+      background: rgba(255,255,255,.78);
+      border:1px solid var(--line);
+      border-radius: 18px;
+      padding:14px;
+      box-shadow: var(--shadow2);
+      min-height: 220px;
+    }
+    .result-card h3{
+      margin:0 0 10px;
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:-0.2px;
+      color: rgba(11,18,32,.86);
+    }
+
+    .report-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    .risk-banner{
+      display:flex; align-items:flex-start; gap:12px;
+      background: linear-gradient(135deg, rgba(239,68,68,.10), rgba(239,68,68,.04));
+      border:1px solid rgba(239,68,68,.24);
+      border-radius:16px;
+      padding:14px 16px;
+      margin-bottom:14px;
+    }
+    .risk-banner-icon{font-size:20px; line-height:1;}
+    .risk-banner-title{font-size:14.5px; font-weight:900; color:#991b1b;}
+    .risk-banner-detail{font-size:13px; font-weight:700; color:rgba(153,27,27,.82); margin-top:3px;}
+    .action-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    .action-stat-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+    .action-stat-tile{border:1px solid rgba(15,23,42,.08); border-radius:16px; padding:14px 10px; text-align:center; background:rgba(255,255,255,.9);}
+    .action-stat-icon{width:34px; height:34px; margin:0 auto 8px; border-radius:12px; background:rgba(26,109,255,.10); display:grid; place-items:center; font-size:16px;}
+    .action-stat-value{font-size:18px; font-weight:900;}
+    .action-stat-label{font-size:11.5px; color:rgba(11,18,32,.58); font-weight:800; margin-top:2px;}
+    .top-action-card{border:1px solid rgba(15,23,42,.08); border-radius:16px; padding:14px; background:rgba(255,255,255,.92);}
+    .top-action-tag{display:inline-block; font-size:11px; font-weight:900; color:#1A6DFF; background:rgba(26,109,255,.10); border-radius:999px; padding:3px 9px; margin-right:6px;}
+    .report-card{
+      background: rgba(255,255,255,.78);
+      border:1px solid var(--line);
+      border-radius: 18px;
+      padding:14px;
+      box-shadow: var(--shadow2);
+      min-height: 180px;
+    }
+    .report-card h3{
+      margin:0 0 10px;
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:-0.2px;
+      color: rgba(11,18,32,.86);
+    }
+
+    .kpi-grid{
+      display:grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap:12px;
+      margin-bottom:12px;
+    }
+    .kpi-card{
+      background: rgba(255,255,255,.78);
+      border:1px solid var(--line);
+      border-radius: 18px;
+      padding:14px;
+      box-shadow: var(--shadow2);
+      min-height: 126px;
+    }
+    .kpi-label{
+      font-size:12px;
+      font-weight:900;
+      color: rgba(11,18,32,.62);
+      margin-bottom:10px;
+    }
+    .kpi-value{
+      font-size:24px;
+      font-weight:900;
+      letter-spacing:-0.5px;
+      margin-bottom:8px;
+    }
+    .kpi-comment{
+      font-size:12px;
+      line-height:1.4;
+      color: rgba(11,18,32,.68);
+      font-weight:700;
+    }
+    #selRegion,
+    #selIndustry,
+    #inpEmployees,
+    #selTaxpayerGuess{
+      font-weight:800;
+    }
+    .kpi-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:58px;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:900;
+      margin-bottom:10px;
+    }
+    .kpi-good{ background: var(--good-bg); color: var(--good-text); }
+    .kpi-warn{ background: var(--warn2-bg); color: var(--warn2-text); }
+    .kpi-risk{ background: var(--risk-bg); color: var(--risk-text); }
+    .kpi-unknown{ background: var(--neutral-bg); color: var(--neutral-text); }
+
+    .benchmark-card{
+      background: rgba(255,255,255,.78);
+      border:1px solid var(--line);
+      border-radius: 18px;
+      padding:14px;
+      box-shadow: var(--shadow2);
+      margin-bottom:12px;
+    }
+    .benchmark-card h3{
+      margin:0 0 10px;
+      font-size:14px;
+      font-weight:900;
+      color: rgba(11,18,32,.86);
+    }
+    .benchmark-meta{
+      font-size:12px;
+      color: rgba(11,18,32,.58);
+      font-weight:800;
+      margin-bottom:10px;
+    }
+    .bench-table-wrap{
+      overflow:auto;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#fff;
+    }
+    .bench-table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:760px;
+    }
+    .bench-table th,
+    .bench-table td{
+      padding:12px 10px;
+      border-bottom:1px solid var(--line);
+      text-align:left;
+      font-size:12px;
+      vertical-align:middle;
+    }
+    .bench-table th{
+      background: rgba(11,18,32,.03);
+      font-weight:900;
+      color: rgba(11,18,32,.74);
+    }
+    .bench-table td{
+      font-weight:800;
+      color: rgba(11,18,32,.82);
+    }
+
+    .meta-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    .meta-card{
+      background: rgba(255,255,255,.78);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+      box-shadow: var(--shadow2);
+      min-height:160px;
+    }
+    .meta-card h3{
+      margin:0 0 10px;
+      font-size:14px;
+      font-weight:900;
+      color: rgba(11,18,32,.86);
+    }
+
+    .report-list{
+      margin:0;
+      padding-left:18px;
+    }
+    .report-list li{
+      margin:0 0 8px;
+      line-height:1.45;
+      font-size:13px;
+      font-weight:700;
+      color: rgba(11,18,32,.84);
+    }
+    .empty-note{
+      font-size:13px;
+      color: rgba(11,18,32,.56);
+      font-weight:800;
+      line-height:1.5;
+    }
+    .brief-item{
+      padding:10px 12px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background: rgba(11,18,32,.03);
+    }
+    .brief-item + .brief-item{ margin-top:8px; }
+    .brief-k{
+      font-size:12px;
+      color: rgba(11,18,32,.58);
+      font-weight:900;
+      margin-bottom:6px;
+    }
+    .brief-v{
+      font-size:15px;
+      font-weight:900;
+      letter-spacing:-0.2px;
+    }
+    .action-block, .risk-block{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px;
+      background: rgba(11,18,32,.03);
+    }
+    .action-block + .action-block,
+    .risk-block + .risk-block{
+      margin-top:8px;
+    }
+    .block-title{
+      font-size:13px;
+      font-weight:900;
+      margin-bottom:6px;
+    }
+    .block-sub{
+      font-size:12px;
+      color: rgba(11,18,32,.70);
+      font-weight:800;
+      line-height:1.45;
+    }
+    .mini-list{
+      margin:8px 0 0;
+      padding-left:18px;
+    }
+    .mini-list li{
+      margin:0 0 6px;
+      font-size:12px;
+      font-weight:700;
+      color: rgba(11,18,32,.80);
+      line-height:1.4;
+    }
+
+    .level-chip{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:56px;
+      padding:4px 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:900;
+    }
+    .level-good{ background: var(--good-bg); color: var(--good-text); }
+    .level-warn{ background: var(--warn2-bg); color: var(--warn2-text); }
+    .level-risk{ background: var(--risk-bg); color: var(--risk-text); }
+    .level-neutral{ background: var(--neutral-bg); color: var(--neutral-text); }
+
+    pre{
+      margin:0;
+      padding:12px;
+      background: rgba(11,18,32,.04);
+      border:1px solid rgba(15,23,42,.10);
+      border-radius: 14px;
+      overflow:auto;
+      font-size:12px;
+      line-height:1.4;
+    }
+
+
+    .quick-core-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    .precision-cta{
+      margin-top:14px;
+      padding:16px;
+      border-radius:18px;
+      border:1px solid rgba(26,109,255,.14);
+      background: linear-gradient(180deg, rgba(26,109,255,.06), rgba(255,255,255,.82));
+      box-shadow: var(--shadow2);
+    }
+    .precision-cta-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .precision-cta-title{
+      font-size:15px;
+      font-weight:900;
+      letter-spacing:-0.2px;
+      margin-bottom:4px;
+    }
+    .precision-cta-desc{
+      font-size:12px;
+      color:rgba(11,18,32,.62);
+      font-weight:800;
+      line-height:1.5;
+    }
+    .precision-chip{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      background:#fff;
+      border:1px solid rgba(15,23,42,.08);
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:12px;
+      font-weight:900;
+      color:rgba(11,18,32,.72);
+    }
+    .wizard-shell{
+      margin-top:16px;
+      border:1px solid rgba(15,23,42,.10);
+      background: rgba(255,255,255,.82);
+      border-radius:20px;
+      box-shadow: var(--shadow2);
+      padding:16px;
+    }
+    .wizard-progress{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:10px;
+      margin-bottom:14px;
+    }
+    .wizard-step-chip{
+      border:1px solid rgba(15,23,42,.10);
+      background: rgba(11,18,32,.03);
+      border-radius:16px;
+      padding:12px 10px;
+      min-height:72px;
+      transition: .18s ease;
+    }
+    .wizard-step-chip.active{
+      border-color: rgba(26,109,255,.22);
+      background: rgba(26,109,255,.10);
+      box-shadow: inset 0 0 0 1px rgba(26,109,255,.08);
+    }
+    .wizard-step-chip.done{
+      border-color: rgba(34,197,94,.18);
+      background: rgba(34,197,94,.08);
+    }
+    .wizard-step-no{
+      font-size:11px;
+      color:rgba(11,18,32,.52);
+      font-weight:900;
+      margin-bottom:6px;
+    }
+    .wizard-step-title{
+      font-size:13px;
+      font-weight:900;
+      margin-bottom:4px;
+    }
+    .wizard-step-desc{
+      font-size:11px;
+      color:rgba(11,18,32,.58);
+      font-weight:800;
+      line-height:1.4;
+    }
+    .wizard-body{
+      margin-top:8px;
+    }
+    .wizard-panel{
+      display:none;
+    }
+    .wizard-panel.active{
+      display:block;
+      animation: wizardFade .16s ease;
+    }
+    @keyframes wizardFade{
+      from{opacity:.5; transform:translateY(4px)}
+      to{opacity:1; transform:translateY(0)}
+    }
+    .wizard-nav{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-top:14px;
+      flex-wrap:wrap;
+    }
+    .wizard-nav-left, .wizard-nav-right{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .wizard-summary{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    .wizard-summary-card{
+      border:1px solid var(--line);
+      border-radius:16px;
+      background: rgba(11,18,32,.03);
+      padding:12px;
+    }
+    .wizard-summary-card .k{
+      font-size:12px;
+      color:rgba(11,18,32,.58);
+      font-weight:900;
+      margin-bottom:8px;
+    }
+    .wizard-summary-card .v{
+      font-size:14px;
+      font-weight:900;
+      line-height:1.5;
+    }
+
+
+    .summary-grid-3{grid-template-columns:repeat(3, 1fr);}
+    .summary-card-guide{position:relative; min-height:106px; padding-right:56px; display:flex; flex-direction:column; justify-content:center;}
+    .guide-trigger{position:absolute; right:16px; top:50%; transform:translateY(-50%); width:34px; height:34px; border:none; border-radius:999px; background:rgba(15,23,42,.06); color:rgba(11,18,32,.60); cursor:pointer; display:grid; place-items:center; font-size:16px; box-shadow:none;}
+    .guide-trigger:hover{background:rgba(15,23,42,.10);}
+    .guide-trigger svg{display:block;}
+    .month-control{position:relative; overflow:visible;}
+    #inpMonthDisplay{cursor:pointer; font-weight:800;}
+    .month-popover{position:absolute; top:calc(100% + 8px); right:0; width:280px; padding:14px; border-radius:20px; background:rgba(255,255,255,.98); border:1px solid rgba(15,23,42,.10); box-shadow:0 24px 54px rgba(15,23,42,.16); z-index:25;}
+    .month-popover-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px;}
+    .month-popover-year{font-size:16px; font-weight:900; letter-spacing:-.3px;}
+    .month-nav-btn{border:none; width:32px; height:32px; border-radius:999px; cursor:pointer; background:rgba(11,18,32,.06); font-size:18px; line-height:1; font-weight:900;}
+    .month-popover-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
+    .month-popover-month{border:none; border-radius:14px; padding:12px 8px; cursor:pointer; font-weight:900; background:rgba(248,250,252,.95); box-shadow:inset 0 0 0 1px rgba(15,23,42,.06); color:rgba(11,18,32,.82);}
+    .month-popover-month:hover{background:rgba(26,109,255,.08);}
+    .month-popover-month.active{background:linear-gradient(135deg,var(--primary),var(--primary2)); color:#fff; box-shadow:none;}
+    .month-popover-month.current{box-shadow:inset 0 0 0 1px rgba(26,109,255,.18);}
+    .month-popover-foot{display:flex; justify-content:space-between; gap:10px; margin-top:12px;}
+    .month-foot-btn{border:none; background:rgba(11,18,32,.06); color:rgba(11,18,32,.72); border-radius:999px; padding:10px 12px; font-weight:900; cursor:pointer;}
+    .month-foot-btn.active{background:rgba(26,109,255,.10); color:#1A6DFF;}
+    .guide-modal{position:fixed; inset:0; z-index:70;}
+    .guide-backdrop{position:absolute; inset:0; background:rgba(15,23,42,.34); backdrop-filter:blur(4px);}
+    .guide-dialog{position:relative; z-index:1; min-height:100%; display:grid; place-items:center; padding:24px;}
+    .guide-card{width:min(760px, 100%); background:#fff; border:1px solid rgba(15,23,42,.10); border-radius:24px; box-shadow:0 30px 80px rgba(15,23,42,.20); overflow:hidden;}
+    .guide-head{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:20px 22px 14px; border-bottom:1px solid rgba(15,23,42,.08);}
+    .guide-title{font-size:22px; font-weight:900; letter-spacing:-.4px;}
+    .guide-desc{font-size:13px; color:rgba(11,18,32,.60); font-weight:800; line-height:1.5; margin-top:6px;}
+    .guide-close{border:none; background:rgba(11,18,32,.06); width:36px; height:36px; border-radius:999px; cursor:pointer; font-size:16px;}
+    .guide-body{padding:18px 22px 22px;}
+    .guide-meta{display:inline-flex; align-items:center; min-height:38px; padding:8px 14px; border-radius:999px; background:rgba(26,109,255,.08); color:#1A6DFF; font-weight:900; margin-bottom:14px;}
+    .criteria-guide-grid{display:grid; gap:14px;}
+    .criteria-guide-card{border:1px solid rgba(15,23,42,.08); border-radius:18px; background:rgba(248,250,252,.9); padding:16px;}
+    .criteria-guide-card h4{margin:0 0 10px; font-size:15px; font-weight:900;}
+    .criteria-guide-card p{margin:0; font-size:13px; color:rgba(11,18,32,.78); font-weight:700; line-height:1.6;}
+    .criteria-list{margin:0; padding-left:18px; display:grid; gap:8px;}
+    .criteria-list li{font-size:13px; font-weight:700; color:rgba(11,18,32,.82); line-height:1.5;}
+    .criteria-table{width:100%; border-collapse:collapse; overflow:hidden; border-radius:14px; background:#fff;}
+    .criteria-table th,.criteria-table td{padding:12px 10px; border-bottom:1px solid rgba(15,23,42,.08); text-align:left; font-size:13px;}
+    .criteria-table th{background:rgba(11,18,32,.04); font-weight:900; color:rgba(11,18,32,.70);}
+    .criteria-table td{font-weight:700; color:rgba(11,18,32,.82);}
+    .financial-summary-card{border:1px solid rgba(15,23,42,.08); border-radius:24px; background:rgba(255,255,255,.92); padding:18px;}
+    .financial-total-label{font-size:13px; color:rgba(11,18,32,.56); font-weight:900;}
+    .financial-total-value{font-size:24px; font-weight:900; letter-spacing:-.5px; margin:10px 0 8px; color:#64748b;}
+    .financial-desc{font-size:13px; color:rgba(11,18,32,.66); font-weight:700; line-height:1.6; margin-bottom:14px;}
+    .financial-bar{display:flex; width:100%; height:20px; overflow:hidden; border-radius:999px; background:rgba(15,23,42,.06); margin-bottom:16px;}
+    .financial-bar-seg{height:100%;}
+    .financial-donut-row{display:grid; grid-template-columns:150px 1fr; gap:20px; align-items:center; margin-bottom:16px;}
+    .financial-donut-wrap{position:relative; width:150px; height:150px;}
+    .financial-donut-center{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none;}
+    .financial-donut-center-label{font-size:12px; font-weight:800; color:rgba(11,18,32,.56);}
+    .financial-donut-center-value{font-size:18px; font-weight:900; margin-top:2px;}
+    .financial-legend{display:flex; flex-direction:column; gap:10px;}
+    .financial-legend-row{display:flex; align-items:center; gap:8px; font-size:13px; font-weight:800; color:rgba(11,18,32,.76);}
+    .financial-legend-dot{width:11px; height:11px; border-radius:4px; flex:0 0 auto;}
+    .financial-list{display:grid; gap:12px;}
+    .financial-item{display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:center; padding:14px; border:1px solid rgba(15,23,42,.08); border-radius:18px; background:rgba(255,255,255,.96);}
+    .financial-icon{width:44px; height:44px; border-radius:999px; display:grid; place-items:center; font-weight:900; color:rgba(11,18,32,.70);}
+    .financial-label{font-size:15px; font-weight:900; margin-bottom:4px;}
+    .financial-sub{font-size:13px; color:#64748b; font-weight:900;}
+    .financial-amount{font-size:16px; font-weight:900; color:rgba(11,18,32,.82); white-space:nowrap;}
+    .financial-comment{margin-top:14px; font-size:14px; font-weight:900; color:rgba(11,18,32,.74);}
+    .history-head{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px;}
+    .history-title-inline{display:flex; align-items:center; gap:8px;}
+    .history-calendar-btn{border:none; width:34px; height:34px; border-radius:999px; background:rgba(26,109,255,.10); color:#1A6DFF; cursor:pointer; display:grid; place-items:center; font-size:16px;}
+    .history-calendar-btn:hover{background:rgba(26,109,255,.16);}
+.history-month-control{position:relative; overflow:visible;}
+    .history-month-popover{position:absolute; top:calc(100% + 10px); right:0; width:312px; padding:14px; border-radius:22px; background:rgba(255,255,255,.98); border:1px solid rgba(15,23,42,.10); box-shadow:0 24px 54px rgba(15,23,42,.16); z-index:30;}
+    .history-month-popover-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px;}
+    .history-month-popover-year{font-size:16px; font-weight:900; letter-spacing:-.3px;}
+    .history-month-nav-btn{border:none; width:36px; height:36px; border-radius:999px; cursor:pointer; background:rgba(11,18,32,.06); font-size:22px; line-height:1; font-weight:900; color:rgba(11,18,32,.72);}
+    .history-month-popover-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+    .history-month-popover-month{border:none; border-radius:16px; padding:14px 8px; cursor:pointer; font-weight:900; font-size:18px; background:rgba(248,250,252,.95); box-shadow:inset 0 0 0 1px rgba(15,23,42,.06); color:rgba(11,18,32,.82);}
+    .history-month-popover-month:hover{background:rgba(26,109,255,.08);}
+    .history-month-popover-month.active{background:linear-gradient(135deg,var(--primary),var(--primary2)); color:#fff; box-shadow:none;}
+    .history-month-popover-month.current{box-shadow:inset 0 0 0 1px rgba(26,109,255,.18);}
+    .history-month-popover-foot{display:flex; justify-content:space-between; gap:10px; margin-top:14px;}
+    .history-month-foot-btn{border:none; background:rgba(11,18,32,.06); color:rgba(11,18,32,.72); border-radius:999px; padding:12px 18px; font-size:15px; font-weight:900; cursor:pointer;}
+    .history-month-foot-btn.primary{background:rgba(26,109,255,.10); color:#1A6DFF;}
+    body.precision-open{overflow:hidden;}
+    body.precision-open::before{content:""; position:fixed; inset:0; background:rgba(15,23,42,.34); backdrop-filter:blur(4px); z-index:59;}
+    #precisionWizard{position:fixed; left:50%; top:50%; transform:translate(-50%, -50%); width:min(980px, calc(100vw - 28px)); max-height:calc(100vh - 40px); overflow:auto; z-index:60; margin-top:0;}
+
+
+    #panelInput .section-title{font-size:15px;}
+    #panelInput .label{font-size:14px;}
+    #panelInput .help{font-size:13px;}
+    #panelInput .control input,
+    #panelInput .control select,
+    #panelInput #inpMonthDisplay{font-size:17px;}
+    #panelInput #selRegion,
+    #panelInput #selIndustry,
+    #panelInput #inpEmployees,
+    #panelInput #selTaxpayerGuess,
+    #panelInput #inpMonthDisplay{font-weight:800; color:rgba(11,18,32,.96);}
+    #panelInput .money-input input{font-size:17px;}
+    #panelInput .money-unit{font-size:14px;}
+    #panelInput .chip{font-size:13px; padding:10px 12px;}
+    #panelInput .btn{font-size:15px; padding:12px 16px;}
+
+
+    #diagnosisSummaryBox .block-sub{font-size:15px; line-height:1.65; font-weight:800;}
+    #diagnosisSummaryBox .risk-block{padding:14px 16px;}
+    .history-record-list{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;}
+    .history-record-btn{border:none; background:rgba(26,109,255,.08); color:#1A6DFF; border-radius:999px; padding:8px 12px; font-weight:800; cursor:pointer;}
+    .history-record-btn.active{background:linear-gradient(135deg,var(--primary),var(--primary2)); color:#fff;}
+
+    .hidden{display:none !important}
+
+    @media (max-width: 1180px){
+      .kpi-grid{grid-template-columns: repeat(3, 1fr)}
+    }
+    @media (max-width: 980px){
+      .row{grid-template-columns: 1fr}
+      .row-2{grid-template-columns: 1fr}
+      .row-3{grid-template-columns: 1fr}
+      .summary-grid{grid-template-columns: 1fr 1fr}
+      .insight-row{grid-template-columns: 1fr}
+      .result-grid{grid-template-columns: 1fr}
+      .report-grid{grid-template-columns: 1fr}
+      .kpi-grid{grid-template-columns: 1fr 1fr}
+      .meta-grid{grid-template-columns: 1fr}
+      h1{font-size:34px}
+      .brand{min-width: 0}
+      .money-line{grid-template-columns:1fr}
+      .quick-adds{justify-content:flex-start}
+    }
+  
+    /* PDF 버튼 그라데이션 통일 */
+    .btn.pdf,
+    .btn-pdf,
+    #btnPdf,
+    .pdf-btn{
+      border:none;
+      color:#fff;
+      background: linear-gradient(135deg,#2EC5FF 0%,#1A6DFF 45%,#0D3EDB 100%);
+      box-shadow:0 18px 40px rgba(26,109,255,.22);
+    }
+
+</style>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="logo"><img src="./ts-logo.png" alt="TS Logo" /></div>
+        <div class="brand-text">
+          <div class="t1">TS (tax secretary)</div>
+          <div class="t2">회원 계산 · 입력 → 결과 분석</div>
+        </div>
+      </div>
+
+      <button id="btnLogout" class="logout" type="button">로그아웃</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h1>계산기</h1>
+    <p class="subtitle">필수 입력은 바로 보이고, 정밀 입력을 함께 넣으면 공식 기반 추정 정확도를 더 높일 수 있습니다.</p>
+
+    <div class="tabs-card">
+      <div class="tabs">
+        <button id="tabInput" class="tab active" type="button">입력</button>
+        <button id="tabResult" class="tab" type="button">결과 분석</button>
+      </div>
+
+      <section id="panelInput" class="panel">
+        <div class="section-title">엑셀로 여러 달 한 번에 등록</div>
+
+        <div class="card" id="excelImportCard">
+          <div class="field">
+            <div class="label">월별 매출·비용 엑셀 업로드</div>
+            <div class="excel-upload-row">
+              <label class="excel-upload-trigger" for="inpExcelFile">
+                <img class="excel-file-icon" src="./icon-excel.png" alt="" />
+                <div class="excel-upload-text">
+                  <div id="excelFileName" class="excel-file-name">선택된 파일 없음</div>
+                  <div class="excel-file-hint">
+                    첫 행(헤더)에 <b>월</b>(예: 2026-03), <b>매출</b>, <b>비용</b> 컬럼이 있어야 합니다.
+                    인건비/재료비/임대료/기타비용/업종코드/지역코드는 선택 입력입니다.
+                    같은 달 기록이 이미 있으면 <b>덮어쓰기</b>됩니다.
+                  </div>
+                </div>
+              </label>
+              <input id="inpExcelFile" type="file" accept=".xlsx,.xls" class="hidden" />
+              <button id="btnExcelPreview" class="btn btn-excel" type="button">엑셀 미리보기</button>
+            </div>
+            <div id="excelImportError" class="hidden" style="color:var(--risk-text); margin-top:8px; font-size:13px;"></div>
+          </div>
+
+          <div id="excelPreviewBox" class="hidden" style="margin-top:14px;">
+            <div id="excelPreviewSummary" class="empty-note"></div>
+            <div id="excelPreviewList" class="excel-preview-list"></div>
+            <div class="actions" style="margin-top:12px;">
+              <button id="btnExcelCancel" class="btn ghost" type="button">취소</button>
+              <button id="btnExcelCommit" class="btn primary" type="button">확인한 내용대로 저장</button>
+            </div>
+          </div>
+
+          <div id="excelCommitResultBox" class="hidden" style="margin-top:14px;"></div>
+        </div>
+
+        <div class="section-title" style="margin-top:20px;">계산 입력 (필수)</div>
+
+        <div class="card">
+          <div class="field">
+            <div class="label">월 / 지역 / 업종</div>
+            <div class="row">
+              <div class="control month-control">
+                <input id="inpMonth" type="month" class="hidden" />
+                <input id="inpMonthDisplay" type="text" placeholder="----년 --월" readonly />
+                <button id="btnMonthToday" class="iconbtn" type="button" title="월 선택">📅</button>
+                <div id="monthPopover" class="month-popover hidden">
+                  <div class="month-popover-head">
+                    <button id="btnMonthPrevYear" class="month-nav-btn" type="button" aria-label="이전 연도">‹</button>
+                    <div id="monthPopoverYear" class="month-popover-year">2026</div>
+                    <button id="btnMonthNextYear" class="month-nav-btn" type="button" aria-label="다음 연도">›</button>
+                  </div>
+                  <div id="monthPopoverGrid" class="month-popover-grid"></div>
+                  <div class="month-popover-foot">
+                    <button id="btnMonthClear" class="month-foot-btn" type="button">지우기</button>
+                    <button id="btnMonthThis" class="month-foot-btn active" type="button">이번 달</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="control">
+                <select id="selRegion">
+                  <option value="">지역 선택</option>
+                  <option value="ALL">전국</option>
+                  <option value="SEOUL">서울</option>
+                  <option value="BUSAN">부산</option>
+                  <option value="DAEGU">대구</option>
+                  <option value="INCHEON">인천</option>
+                  <option value="GWANGJU">광주</option>
+                  <option value="DAEJEON">대전</option>
+                  <option value="ULSAN">울산</option>
+                  <option value="GYEONGGI">경기</option>
+                  <option value="GANGWON">강원</option>
+                  <option value="CHUNGBUK">충북</option>
+                  <option value="CHUNGNAM">충남</option>
+                  <option value="JEONBUK">전북</option>
+                  <option value="JEONNAM">전남</option>
+                  <option value="GYEONGBUK">경북</option>
+                  <option value="GYEONGNAM">경남</option>
+                  <option value="JEJU">제주</option>
+                </select>
+              </div>
+
+              <div class="control">
+                <select id="selIndustry">
+                  <option value="">업종 선택</option>
+
+                  <optgroup label="음식점(세분)">
+                    <option value="백반/한식">🍚 백반/한식</option>
+                    <option value="중식">🥟 중식</option>
+                    <option value="일식">🍣 일식</option>
+                    <option value="찜·탕">🍲 찜·탕</option>
+                    <option value="고기">🥩 고기</option>
+                    <option value="치킨">🍗 치킨</option>
+                    <option value="피자">🍕 피자</option>
+                    <option value="패스트푸드">🍔 패스트푸드</option>
+                    <option value="간식">🍡 간식</option>
+                    <option value="도시락">🍱 도시락</option>
+                    <option value="족발">🐷 족발</option>
+                    <option value="야식">🌙 야식</option>
+                    <option value="아시아">🍜 아시아</option>
+                    <option value="양식">🍝 양식</option>
+                    <option value="기타(일반)">🧾 기타(일반)</option>
+                  </optgroup>
+
+                  <optgroup label="카페/베이커리">
+                    <option value="카페">☕ 카페</option>
+                    <option value="디저트">🍰 디저트</option>
+                    <option value="제과/베이커리">🥐 제과/베이커리</option>
+                  </optgroup>
+
+                  <optgroup label="주점/기타">
+                    <option value="주점">🍺 주점</option>
+                  </optgroup>
+
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="quick-core-grid">
+            <div class="field">
+              <div class="label">월 매출 (부가세 포함)</div>
+              <div class="money-line">
+                <div class="money-input">
+                  <input id="inpSales" inputmode="numeric" placeholder="0" />
+                  <div class="money-unit">원</div>
+                </div>
+                <div class="quick-adds">
+                  <button class="chip" type="button" data-add="sales" data-amt="1000000">+100만</button>
+                  <button class="chip" type="button" data-add="sales" data-amt="10000000">+1,000만</button>
+                  <button class="chip" type="button" data-add="sales" data-amt="100000000">+1억</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <div class="label">월 비용(총합) (부가세 포함)</div>
+              <div class="money-line">
+                <div class="money-input">
+                  <input id="inpCostTotal" inputmode="numeric" placeholder="0" />
+                  <div class="money-unit">원</div>
+                </div>
+                <div class="quick-adds">
+                  <button class="chip" type="button" data-add="cost" data-amt="1000000">+100만</button>
+                  <button class="chip" type="button" data-add="cost" data-amt="10000000">+1,000만</button>
+                  <button class="chip" type="button" data-add="cost" data-amt="100000000">+1억</button>
+                </div>
+              </div>
+              <div class="help">정밀 입력을 넣으면 총비용과 비교해 리포트에 함께 반영됩니다.</div>
+            </div>
+          </div>
+
+          <div class="quick-core-grid">
+            <div class="field">
+              <div class="label">월 인건비</div>
+              <div class="money-line">
+                <div class="money-input">
+                  <input id="inpLabor" inputmode="numeric" placeholder="0" />
+                  <div class="money-unit">원</div>
+                </div>
+                <div class="quick-adds">
+                  <button class="chip" type="button" data-add="labor" data-amt="1000000">+100만</button>
+                  <button class="chip" type="button" data-add="labor" data-amt="5000000">+500만</button>
+                  <button class="chip" type="button" data-add="labor" data-amt="10000000">+1,000만</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <div class="label">직원 수</div>
+              <div class="control">
+                <input id="inpEmployees" inputmode="numeric" placeholder="직원 수 (없으면 0)" />
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="label">과세유형(추정)</div>
+            <div class="control">
+              <select id="selTaxpayerGuess">
+                <option value="">자동 추정</option>
+                <option value="GENERAL">일반과세(추정)</option>
+                <option value="SIMPLE">간이과세(추정)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="precision-cta">
+            <div class="actions" style="margin-top:0;">
+              <button id="btnFillExample" class="btn ghost" type="button">예시값 채우기</button>
+              <button id="btnGoPro" class="btn" type="button">정밀 계산</button>
+              <button id="btnRun" class="btn primary" type="button">계산 실행</button>
+            </div>
+          </div>
+
+          <div id="precisionWizard" class="wizard-shell hidden">
+            <div class="section-title" style="margin-top:0;">정밀 계산 (단계별 입력)</div>
+
+            <div class="wizard-progress">
+              <div class="wizard-step-chip active" data-step-chip="1">
+                <div class="wizard-step-no">STEP 1</div>
+                <div class="wizard-step-title">비용 분해</div>
+                <div class="wizard-step-desc">재료비 · 임대료 · 기타비용</div>
+              </div>
+              <div class="wizard-step-chip" data-step-chip="2">
+                <div class="wizard-step-no">STEP 2</div>
+                <div class="wizard-step-title">매입 증빙</div>
+                <div class="wizard-step-desc">세금계산서 · 카드 · 현금영수증</div>
+              </div>
+              <div class="wizard-step-chip" data-step-chip="3">
+                <div class="wizard-step-no">STEP 3</div>
+                <div class="wizard-step-title">추가 정보</div>
+                <div class="wizard-step-desc">면세 농산물 · 전년도 매출 · 급여</div>
+              </div>
+              <div class="wizard-step-chip" data-step-chip="4">
+                <div class="wizard-step-no">STEP 4</div>
+                <div class="wizard-step-title">검토 후 실행</div>
+                <div class="wizard-step-desc">입력 요약 확인 후 정밀 계산</div>
+              </div>
+            </div>
+
+            <div class="wizard-body">
+              <div id="wizardStep1" class="wizard-panel active">
+                <div class="field">
+                  <div class="label">비용 분해 (월 · 부가세 포함)</div>
+                  <div class="row-3">
+                    <div>
+                      <div class="money-input">
+                        <input id="inpMaterial" inputmode="numeric" placeholder="재료비" />
+                        <div class="money-unit">원</div>
+                      </div>
+                    </div>
+                    <div>
+                      <div class="money-input">
+                        <input id="inpRent" inputmode="numeric" placeholder="임대료" />
+                        <div class="money-unit">원</div>
+                      </div>
+                    </div>
+                    <div>
+                      <div class="money-input">
+                        <input id="inpOther" inputmode="numeric" placeholder="기타비용" />
+                        <div class="money-unit">원</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="help">입력하면 비용 항목별 비교가 더 정확해집니다.</div>
+                </div>
+              </div>
+
+              <div id="wizardStep2" class="wizard-panel">
+                <div class="field">
+                  <div class="label">매입 증빙별 입력 (월 · 부가세 포함)</div>
+                  <div class="row-3">
+                    <div>
+                      <div class="money-input">
+                        <input id="inpPurchaseTaxInvoice" inputmode="numeric" placeholder="세금계산서 매입" />
+                        <div class="money-unit">원</div>
+                      </div>
+                    </div>
+                    <div>
+                      <div class="money-input">
+                        <input id="inpPurchaseCard" inputmode="numeric" placeholder="카드 매입" />
+                        <div class="money-unit">원</div>
+                      </div>
+                    </div>
+                    <div>
+                      <div class="money-input">
+                        <input id="inpPurchaseCashReceipt" inputmode="numeric" placeholder="현금영수증 매입" />
+                        <div class="money-unit">원</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="help">증빙 구분 시 세액 추정이 더 정확해집니다.</div>
+                </div>
+              </div>
+
+              <div id="wizardStep3" class="wizard-panel">
+                <div class="field">
+                  <div class="label">추가 정밀 입력</div>
+                  <div class="row-2">
+                    <div>
+                      <div class="money-input">
+                        <input id="inpPurchaseExemptAgri" inputmode="numeric" placeholder="면세 농산물 매입" />
+                        <div class="money-unit">원</div>
+                      </div>
+                    </div>
+                    <div>
+                      <div class="money-input">
+                        <input id="inpPriorYearSales" inputmode="numeric" placeholder="직전연도 매출(연)" />
+                        <div class="money-unit">원</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row-2" style="margin-top:10px;">
+                    <div>
+                      <div class="money-input">
+                        <input id="inpPayrollTotal" inputmode="numeric" placeholder="직원 급여총액(월)" />
+                        <div class="money-unit">원</div>
+                      </div>
+                    </div>
+                    <div class="control">
+                      <input id="inpIndustryCodeManual" placeholder="업종코드 직접 입력(선택)" />
+                    </div>
+                  </div>
+                  <div class="help">업종코드 입력 시 우선 적용됩니다. 예: 5611</div>
+                </div>
+              </div>
+
+              <div id="wizardStep4" class="wizard-panel">
+                <div class="wizard-summary">
+                  <div class="wizard-summary-card">
+                    <div class="k">일반 입력 요약</div>
+                    <div id="wizardQuickSummary" class="v">아직 입력 전</div>
+                  </div>
+                  <div class="wizard-summary-card">
+                    <div class="k">정밀 입력 요약</div>
+                    <div id="wizardProSummary" class="v">아직 입력 전</div>
+                  </div>
+                </div>
+
+                <div class="info-strip" style="margin-top:12px;">
+                  정밀 입력은 선택이며, 입력할수록 추정 정확도가 올라갑니다.
+                </div>
+              </div>
+            </div>
+
+            <div id="costMismatchBox" class="warn-strip hidden">
+              <div id="costMismatchText">총비용과 세부비용 합계가 다릅니다.</div>
+            </div>
+
+            <div class="wizard-nav">
+              <div class="wizard-nav-left">
+                <button id="btnClosePro" class="btn ghost" type="button">정밀 입력 닫기</button>
+              </div>
+              <div class="wizard-nav-right">
+                <button id="btnProPrev" class="btn ghost" type="button">이전</button>
+                <button id="btnProNext" class="btn" type="button">다음</button>
+                <button id="btnRunPro" class="btn primary hidden" type="button">정밀 계산 실행</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-title">결과 분석 (요약)</div>
+
+        <div class="summary-grid summary-grid-3">
+          <div class="summary-card hidden" aria-hidden="true">
+            <div class="k">요약 <span class="pill">·</span></div>
+            <div id="sumSummary" class="v">계산 전</div>
+          </div>
+
+          <div class="summary-card hidden" aria-hidden="true">
+            <div class="k">저장 상태 <span class="pill">·</span></div>
+            <div id="sumSave" class="v">-</div>
+          </div>
+
+          <div class="summary-card summary-card-guide">
+            <button id="btnScoreGuide" class="guide-trigger" type="button" title="점수 해석 가이드">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M5 20V10M12 20V4M19 20v-7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+            </button>
+            <div class="k">점수</div>
+            <div id="sumScore" class="v">-</div>
+          </div>
+
+          <div class="summary-card summary-card-guide">
+            <button id="btnGradeGuide" class="guide-trigger" type="button" title="등급 해석표">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3Z" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="k">등급</div>
+            <div id="sumGrade" class="v">-</div>
+          </div>
+
+          <div class="summary-card summary-card-guide">
+            <button id="btnConfidenceGuide" class="guide-trigger" type="button" title="신뢰도 구간표">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8.5" r="5" stroke="currentColor" stroke-width="2.1"/><path d="M8.2 12.8 6.5 21l5.5-3 5.5 3-1.7-8.2" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="k">신뢰도</div>
+            <div id="sumConfidence" class="v">-</div>
+          </div>
+        </div>
+
+        <div id="sumInsight" class="hidden">계산을 실행하면 표시됩니다.</div>
+        <div id="tagLine" class="hidden"><span class="tag">ready</span></div>
+
+        <div id="errorBox" class="tag-area hidden" style="border-color: rgba(255,0,0,.18); background: rgba(255,0,0,.03);">
+          <div class="k" style="color: rgba(255,0,0,.65);">오류</div>
+          <div id="errorText" class="disclaimer" style="color: rgba(11,18,32,.78); font-weight:900;"></div>
+        </div>
+
+        <div id="debugBox" class="tag-area hidden" aria-hidden="true">
+          <div class="k">디버그 · 계산 요청 Payload</div>
+          <div class="disclaimer" style="margin-top:0;">
+            실제로 백엔드에 보낸 JSON을 이 영역에 출력합니다.
+          </div>
+          <pre id="prePayload" style="margin-top:10px;">{}</pre>
+        </div>
+      </section>
+
+      <section id="panelResult" class="panel hidden">
+        <div class="kpi-grid" id="kpiCardsWrap"></div>
+
+        <div class="benchmark-card">
+          <h3>벤치마크 비교</h3>
+          <div id="benchmarkMeta" class="benchmark-meta">계산 후 표시됩니다.</div>
+          <div class="bench-table-wrap">
+            <table class="bench-table">
+              <thead>
+                <tr>
+                  <th>지표</th>
+                  <th>내 값</th>
+                  <th>중간값</th>
+                  <th>상위 25% 기준</th>
+                  <th>하위 25% 기준</th>
+                  <th>차이(%p)</th>
+                  <th>레벨</th>
+                </tr>
+              </thead>
+              <tbody id="benchmarkTableBody">
+                <tr>
+                  <td colspan="7" class="empty-note" style="padding:14px;">계산 후 표시됩니다.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="meta-grid">
+          <div class="meta-card">
+            <h3>가정</h3>
+            <div id="metaAssumptions" class="empty-note">계산 후 표시됩니다.</div>
+          </div>
+          <div class="meta-card">
+            <h3>제한사항 / 부분 실패</h3>
+            <div id="metaFailures" class="empty-note">계산 후 표시됩니다.</div>
+          </div>
+        </div>
+
+        <div class="report-grid">
+          <div class="report-card">
+            <h3>요약 리포트</h3>
+            <div id="reportExecutive" class="empty-note">계산 후 표시됩니다.</div>
+          </div>
+
+          <div class="report-card">
+            <h3>세금 브리프</h3>
+            <div id="reportTaxBrief" class="empty-note">계산 후 표시됩니다.</div>
+          </div>
+
+          <div class="report-card">
+            <h3>세금 신고 요약</h3>
+            <div id="taxSignalBox" class="empty-note">계산 후 표시됩니다.</div>
+          </div>
+
+          <div class="report-card hidden" aria-hidden="true">
+            <h3>리스크 드라이버</h3>
+            <div id="reportRisk" class="empty-note">계산 후 표시됩니다.</div>
+          </div>
+        </div>
+
+        <div class="action-grid">
+          <div class="report-card">
+            <h3>실행 액션</h3>
+            <div id="actionSummaryBox" class="empty-note">계산 후 표시됩니다.</div>
+          </div>
+
+          <div class="report-card">
+            <h3>가장 먼저 할 일</h3>
+            <div id="reportActions" class="empty-note">계산 후 표시됩니다.</div>
+          </div>
+        </div>
+
+        <div class="result-grid hidden" aria-hidden="true">
+          <div class="result-card">
+            <h3>정밀 리포트 (원본 응답)</h3>
+            <pre id="preJson">{}</pre>
+          </div>
+          <div class="result-card">
+            <h3>요약/메타</h3>
+            <pre id="preMeta">{}</pre>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div id="criteriaGuideModal" class="guide-modal hidden" aria-hidden="true">
+      <div class="guide-backdrop" data-close-criteria="true"></div>
+      <div class="guide-dialog">
+        <div class="guide-card" role="dialog" aria-modal="true" aria-labelledby="criteriaGuideTitle">
+          <div class="guide-head">
+            <div>
+              <div id="criteriaGuideTitle" class="guide-title">기준 안내</div>
+              <div id="criteriaGuideDesc" class="guide-desc">계산 후 표시됩니다.</div>
+            </div>
+            <button id="btnCloseCriteriaGuide" class="guide-close" type="button" aria-label="기준 닫기">✕</button>
+          </div>
+          <div class="guide-body">
+            <div id="criteriaGuideMeta" class="guide-meta">계산 후 표시됩니다.</div>
+            <div id="criteriaGuideContent" class="criteria-guide-grid"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    window.addEventListener('submit', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }, true);
+
+    window.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        const t = e.target;
+        const tag = (t && t.tagName) ? t.tagName.toLowerCase() : '';
+        if (tag === 'input') {
+          e.preventDefault();
+        }
+      }
+    }, true);
+  </script>
+
+  <script src="./member.js"></script>
+</body>
+</html>

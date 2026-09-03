@@ -1,0 +1,6 @@
+﻿year_applied,item,employer_rate,employee_rate,lower_bound,upper_bound,industry_code,source_title,source_url
+2026,NPS,0.0475,0.0475,400000,6370000,,"국민연금 요율","https://www.nps.or.kr/"
+2026,HEALTH,0.03595,0.03595,,,,"건강보험 요율","https://www.nhis.or.kr/"
+2026,EMPLOYMENT,0.018,0.009,,,,"고용보험 요율","https://www.ei.go.kr/"
+2026,ACCIDENT,0.0095,0,,,Q56211,"산재보험 업종요율","https://www.comwel.or.kr/"
+2026,ACCIDENT,0.0095,0,,,FOODSVC,"산재보험 업종요율(음식업 매핑)","https://www.comwel.or.kr/"

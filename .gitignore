@@ -1,0 +1,19 @@
+# secrets
+backend/.env
+*.env
+
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# db (로컬 개발용 - 배포 환경에서는 새로 생성됨)
+backend/local_dev.db
+backend/local_dev.db-shm
+backend/local_dev.db-wal
+backend/local_dev.db.backup-*
+
+# misc
+.codex-ppt-inspect/
+.DS_Store
+.claude/settings.local.json
