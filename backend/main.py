@@ -13,6 +13,7 @@ import pandas as pd
 from fastapi import FastAPI, Depends, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
 from sqlalchemy.orm import Session
@@ -1317,3 +1318,11 @@ def delete_record(
     db.add(rec)
     db.commit()
     return {"ok": True, "record_id": record_id}
+
+
+# ---------------------------------------------------------------------
+# Static frontend (single-service deploy: API routes above take priority)
+# ---------------------------------------------------------------------
+_frontend_dir = os.path.join(os.path.dirname(__file__), "..", "frontend")
+if os.path.isdir(_frontend_dir):
+    app.mount("/", StaticFiles(directory=_frontend_dir, html=True), name="frontend")

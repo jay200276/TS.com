@@ -17,10 +17,14 @@ function clearError(){
   box.textContent = "";
 }
 
+function defaultApiBase(){
+  const h = location.hostname;
+  return (h === "localhost" || h === "127.0.0.1") ? "http://127.0.0.1:8000" : "";
+}
 function getApiBase(){
   const inputVal = ($("apiBase")?.value || "").trim();
   const saved = (localStorage.getItem(LS_API_BASE_KEY) || "").trim();
-  const base = inputVal || saved || "http://127.0.0.1:8000";
+  const base = inputVal || saved || defaultApiBase();
   return base.replace(/\/+$/, "");
 }
 function persistApiBase(){

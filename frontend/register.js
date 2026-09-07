@@ -23,10 +23,14 @@ function persistApiBase(){
   const v = ($("apiBase")?.value || "").trim();
   if (v) localStorage.setItem(LS_API_BASE_KEY, v.replace(/\/+$/, ""));
 }
+function defaultApiBase(){
+  const h = location.hostname;
+  return (h === "localhost" || h === "127.0.0.1") ? "http://127.0.0.1:8000" : "";
+}
 function getApiBase(){
   const v = ($("apiBase")?.value || "").trim();
   const saved = (localStorage.getItem(LS_API_BASE_KEY) || "").trim();
-  const base = v || saved || "http://127.0.0.1:8000";
+  const base = v || saved || defaultApiBase();
   return base.replace(/\/+$/, "");
 }
 

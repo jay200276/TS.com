@@ -10,7 +10,10 @@
   const LS_MEMBER_DRAFT_KEY = "ts_member_calc_draft_v1";
   const LS_ACTION_CHECK_KEY = "ts_action_check_v1";
 
-  const DEFAULT_API_BASE = "http://127.0.0.1:8000";
+  const DEFAULT_API_BASE = (() => {
+    const h = location.hostname;
+    return (h === "localhost" || h === "127.0.0.1") ? "http://127.0.0.1:8000" : "";
+  })();
 
   let benchShowAll = false;
   let benchChart = null;
