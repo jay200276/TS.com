@@ -1095,10 +1095,7 @@
     if (!$("diagnosticSection")) {
       const diag = document.createElement("div");
       diag.id = "diagnosticSection";
-      diag.style.display = "grid";
-      diag.style.gridTemplateColumns = "1.1fr .9fr";
-      diag.style.gap = "12px";
-      diag.style.marginBottom = "12px";
+      diag.className = "diagnostic-grid";
       diag.innerHTML = `
         <div class="report-card">
           <h3>종합 진단</h3>
