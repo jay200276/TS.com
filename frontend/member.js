@@ -762,42 +762,42 @@
     e.preventDefault();
     clearError();
 
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, "0");
-    setMonthValue(`${yyyy}-${mm}`);
+    // 샘플 데이터(성수한식당, 2026-08 최신월)와 동일한 값으로 채운다 —
+    // 이래야 "TS가 찾은 기회"/AI 진단/이전 기록 추이가 전부 같은 스토리로 이어진다.
+    setMonthValue("2026-08");
     selRegion.value = "ALL";
     if (!selIndustry.value) selIndustry.value = "백반/한식";
 
-    setWonInput(inpSales, 30000000);
-    setWonInput(inpCostTotal, 18000000);
-    setWonInput(inpLabor, 5000000);
+    setWonInput(inpSales, 70600000);
+    setWonInput(inpCostTotal, 42400000);
+    setWonInput(inpLabor, 23100000);
 
-    setWonInput(inpMaterial, 12000000);
-    setWonInput(inpRent, 3000000);
-    setWonInput(inpOther, 3000000);
+    setWonInput(inpMaterial, 28300000);
+    setWonInput(inpRent, 9500000);
+    setWonInput(inpOther, 4600000);
 
     setWonInput(inpPurchaseTaxInvoice, 8000000);
     setWonInput(inpPurchaseCard, 5000000);
     setWonInput(inpPurchaseCashReceipt, 2000000);
-    setWonInput(inpPurchaseExemptAgri, 1500000);
-    setWonInput(inpPriorYearSales, 280000000);
-    setWonInput(inpPayrollTotal, 5000000);
+    setWonInput(inpPurchaseExemptAgri, 11500000);
+    setWonInput(inpPriorYearSales, 820000000);
+    setWonInput(inpPayrollTotal, 23100000);
 
-    inpEmployees.value = "2";
+    inpEmployees.value = "4";
     selTaxpayerGuess.value = "";
     if (inpIndustryCodeManual) inpIndustryCodeManual.value = "";
 
-    if (inpCardSalesAmount) setWonInput(inpCardSalesAmount, 24000000);
-    if (inpCashReceiptSalesAmount) setWonInput(inpCashReceiptSalesAmount, 3000000);
-    if (inpVisitCount) inpVisitCount.value = "2500";
+    if (inpCardSalesAmount) setWonInput(inpCardSalesAmount, 56900000);
+    if (inpCashReceiptSalesAmount) setWonInput(inpCashReceiptSalesAmount, 7320000);
+    if (inpVisitCount) inpVisitCount.value = "4950";
 
     saveDraft();
     renderCostMismatchWarning();
 
     // 예시값을 다 채웠으니 우리가 보여줄 수 있는 결과(구버전 리포트 + TS가 찾은 기회 +
-    // AI 진단 + 액션 시뮬레이터)를 전부 정밀 모드로 바로 계산해서 보여준다.
+    // AI 진단 + 액션 시뮬레이터 + 이전 기록 추이)를 전부 정밀 모드로 바로 계산해서 보여준다.
     await runCalc("pro");
+    await runV2Sample();
   });
 
   btnGoPro.addEventListener("click", (e) => {
@@ -2783,7 +2783,11 @@
 
       sessionStorage.setItem("ts_last_response_v1", JSON.stringify(data));
 
-      runV2Opportunity(payload).catch((e) => console.warn("[TS] v2 opportunity fetch failed:", e));
+      try {
+        await runV2Opportunity(payload);
+      } catch (e) {
+        console.warn("[TS] v2 opportunity fetch failed:", e);
+      }
 
       try {
         lastRecords = await fetchRecords();
@@ -2865,6 +2869,7 @@
   // v2 Opportunity Finder / Action Simulator (기존 입력값 재사용)
   // ============================================================
   const fmtWonFull = (v) => (v == null ? "-" : `${Math.round(v).toLocaleString("ko-KR")}원`);
+  const firstSentence = (s) => String(s || "").split(/(?<=[.!?])\s+/)[0] || "";
   let v2LastMonthly = null;
 
   function buildV2BusinessInfo(payload) {
@@ -2918,8 +2923,8 @@
       body: JSON.stringify({ business_info, monthly }),
     });
     if (!res.ok) {
-      $("oppSummaryLine").textContent = "절세 기회 분석에 필요한 정보가 부족합니다. (매출·인건비 등 기본 입력을 확인해주세요)";
-      $("oppList").innerHTML = "";
+      $("oppTotalCredit").textContent = "-";
+      $("oppList").innerHTML = `<div class="empty-note">절세 기회 분석에 필요한 정보가 부족합니다. (매출·인건비 등 기본 입력을 확인해주세요)</div>`;
       return;
     }
     const data = await res.json();
@@ -2928,6 +2933,33 @@
     renderV2Opportunities(data);
     renderV2ScenarioCards(data);
     renderV2Simulator(data);
+    renderV2History(data);
+  }
+
+  // "샘플 데이터로 체험하기" 성격: 백엔드의 6개월치 샘플(성수한식당)을 그대로 가져와
+  // 폼에서 만든 단일월 데이터 대신 진짜 추이가 있는 결과로 덮어씌운다.
+  async function runV2Sample() {
+    const base = getApiBase();
+    const res = await fetch(`${base}/api/v2/sample`);
+    if (!res.ok) return;
+    const data = await res.json();
+    v2LastMonthly = data.monthly;
+    renderV2WowBanner(data);
+    renderV2Diagnosis(data);
+    renderV2Opportunities(data);
+    renderV2ScenarioCards(data);
+    renderV2Simulator(data);
+    renderV2History(data);
+  }
+
+  function renderV2History(data) {
+    const rows = (data.monthly || []).map((m) => ({
+      month: m.month,
+      revenue_vat_included: m.sales,
+      cost_vat_included: (m.material_cost || 0) + (m.rent || 0) + (m.other_cost || 0),
+      labor_cost: m.labor_cost,
+    }));
+    renderHistoryTrend(rows);
   }
 
   function renderV2WowBanner(data) {
@@ -2949,7 +2981,7 @@
           <div class="icon">${d.icon}</div>
           <div class="val">${escapeHtml(valueLine)}</div>
           <div class="lbl">${escapeHtml(d.title)}</div>
-          <div class="cmt">${escapeHtml(d.ai_comment)}</div>
+          <div class="cmt">${escapeHtml(firstSentence(d.ai_comment))}</div>
         </div>`
       );
     });
@@ -2980,7 +3012,11 @@
   }
 
   function renderV2Opportunities(data) {
-    $("oppSummaryLine").textContent = data.opportunity_summary_line;
+    const totalCredit = (data.opportunities || [])
+      .filter((o) => o.category === "절세 기회" && o.eligible)
+      .reduce((sum, o) => sum + (o.expected_credit || 0), 0);
+    $("oppTotalCredit").textContent = fmtWonFull(totalCredit);
+
     const list = $("oppList");
     list.innerHTML = "";
     data.opportunities.forEach((o) => {
@@ -2990,16 +3026,22 @@
       if (o.category === "경영 임계점") {
         html += `<div class="amt-row">
           <div><div class="lbl">현재 매출</div><div class="val">${fmtWonFull(o.current_sales)}</div></div>
-          <div><div class="lbl">손익분기점</div><div class="val">${fmtWonFull(o.breakeven_sales)}</div></div>
+          <div><div class="lbl">손익분기점</div><div class="val val-green">${fmtWonFull(o.breakeven_sales)}</div></div>
         </div>`;
       } else {
         html += `<div class="amt-row">
           <div><div class="lbl">${escapeHtml(o.target_amount_label || "대상 금액")}</div><div class="val">${fmtWonFull(o.target_amount)}</div></div>
-          <div><div class="lbl">${escapeHtml(o.expected_credit_label || "예상 공제액")}</div><div class="val" style="color:#2f5fe0">${fmtWonFull(o.expected_credit)}</div></div>
+          <div><div class="lbl">${escapeHtml(o.expected_credit_label || "예상 공제액")}</div><div class="val val-green">${fmtWonFull(o.expected_credit)}</div></div>
         </div>`;
       }
 
-      html += `<p style="font-size:13px;color:var(--muted);line-height:1.6">${escapeHtml(o.why)}</p>`;
+      // 핵심 경고(순효과가 마이너스라 권장하지 않는 경우)는 항상 보이게, 나머지 설명은 토글 하나로 통일
+      if (o.marginal_analysis) {
+        html += `<div class="verdict">${escapeHtml(o.marginal_analysis.verdict)}</div>`;
+      }
+
+      html += `<details class="why-details"><summary>자세히 보기</summary>`;
+      html += `<p>${escapeHtml(o.why)}</p>`;
 
       if (o.marginal_analysis) {
         const m = o.marginal_analysis;
@@ -3010,18 +3052,18 @@
             <div>예상 추가 혜택<b>${fmtWonFull(m.extra_credit)}</b></div>
             <div>순효과<b class="neg">${fmtWonFull(m.net_effect)}</b></div>
           </div>
-        </div>
-        <div class="verdict">${escapeHtml(m.verdict)}</div>`;
+        </div>`;
       }
 
       if (o.rule_meta) {
         const r = o.rule_meta;
         html += `<div class="rule-foot">
-          근거 ${escapeHtml(r.source_url)}<br/>
+          📜 근거 ${escapeHtml(r.source_url)}<br/>
           기준일 ${escapeHtml(r.updated_at)} · 산식 ${escapeHtml(r.formula)} · 한도 ${escapeHtml(r.limit)}<br/>
           필요 증빙 ${escapeHtml(r.required_evidence)}
         </div>`;
       }
+      html += `</details>`;
       html += `</div>`;
       list.insertAdjacentHTML("beforeend", html);
     });

@@ -25,6 +25,25 @@ def _vat_portion(gross: float) -> float:
     return max(0.0, gross) / 11.0
 
 
+def _real_benchmark_row(*, metric: str, business_type_code: str, region_code: str, size_band: str) -> Dict[str, Any]:
+    row = get_benchmark(
+        metric=metric,
+        region_code=region_code or "ALL",
+        business_type_code=business_type_code or "FOOD_ALL",
+        size_band=size_band,
+    )
+    if row:
+        return row
+    # 정확한 매출 구간에 데이터가 없으면 전체 평균(폴백)으로
+    row = get_benchmark(
+        metric=metric,
+        region_code=region_code or "ALL",
+        business_type_code=business_type_code or "FOOD_ALL",
+        size_band="BAND_UNKNOWN",
+    )
+    return row or {}
+
+
 def build_tax_brief(*, business_info: Dict[str, Any], financial_summary: Dict[str, Any]) -> Dict[str, Any]:
     monthly = financial_summary["monthly"]
     months = max(1, len(monthly))
@@ -48,6 +67,27 @@ def build_tax_brief(*, business_info: Dict[str, Any], financial_summary: Dict[st
 
     meta = EngineMeta()
     annual_profit = sum_profit * annualize
+    annual_revenue = sum_sales * annualize
+
+    # 구버전(main.py)과 동일하게: 업종 상위 25%(p75) 이익률을 넘는 부분은
+    # 비정상 입력값일 수 있다고 보고 과세표준을 보수적으로 캡 씌운다.
+    note = "간이 추정치입니다. 실제 신고 세액과 다를 수 있어 세무전문가 확인이 필요합니다."
+    biz_code = map_detail_to_biz_code(business_info.get("industry_detail"))
+    region_code = business_info.get("region_code") or "ALL"
+    size_band = derive_size_band(monthly[-1]["sales"] if monthly else 0)
+    profit_bench = _real_benchmark_row(
+        metric="PROFIT_RATIO", business_type_code=biz_code, region_code=region_code, size_band=size_band
+    )
+    profit_p75 = profit_bench.get("p75")
+    if isinstance(profit_p75, (int, float)) and annual_revenue > 0:
+        bench_profit_cap = annual_revenue * float(profit_p75)
+        if annual_profit > bench_profit_cap:
+            annual_profit = max(0.0, bench_profit_cap)
+            note = (
+                "이익률이 업종 상위 25% 기준을 초과해 과세표준을 업종 벤치마크 기준으로 보수적으로 보정했습니다. "
+                + note
+            )
+
     insurance = compute_insurance_employer_estimate(
         employees_count=business_info.get("employees_count") or 2,
         payroll_total_month=(sum_labor / months),
@@ -68,7 +108,7 @@ def build_tax_brief(*, business_info: Dict[str, Any], financial_summary: Dict[st
         "income_local_tax_annual": int(round(income_tax + local_income_tax)),
         "insurance_annual": int(round(insurance_annual)),
         "total_burden_annual": int(round(total_burden)),
-        "note": "간이 추정치입니다. 실제 신고 세액과 다를 수 있어 세무전문가 확인이 필요합니다.",
+        "note": note,
     }
 
 
@@ -87,22 +127,8 @@ def derive_size_band(revenue_vat_included: float) -> str:
 
 
 def _real_benchmark_p50(*, metric: str, business_type_code: str, region_code: str, size_band: str) -> float:
-    row = get_benchmark(
-        metric=metric,
-        region_code=region_code or "ALL",
-        business_type_code=business_type_code or "FOOD_ALL",
-        size_band=size_band,
-    )
-    if row and row.get("p50") is not None:
-        return float(row["p50"])
-    # 정확한 매출 구간에 데이터가 없으면 전체 평균(폴백)으로
-    row = get_benchmark(
-        metric=metric,
-        region_code=region_code or "ALL",
-        business_type_code=business_type_code or "FOOD_ALL",
-        size_band="BAND_UNKNOWN",
-    )
-    if row and row.get("p50") is not None:
+    row = _real_benchmark_row(metric=metric, business_type_code=business_type_code, region_code=region_code, size_band=size_band)
+    if row.get("p50") is not None:
         return float(row["p50"])
     return DEFAULT_BENCHMARK[metric]
 

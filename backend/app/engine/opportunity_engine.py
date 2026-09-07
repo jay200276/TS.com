@@ -84,7 +84,7 @@ def find_deemed_input_opportunity(
         "DEEMED_INPUT_VAT_CREDIT",
         "면세농산물 등 의제매입세액공제",
         effective_from="2026-01-01",
-        effective_to=None,
+        effective_to="2028-12-31",  # 음식점 우대공제율(9/109) 일몰 2026-12-31 → 2028-12-31로 연장 확정
         eligibility=f"{('법인' if taxpayer_type=='CORP' else '개인')} 음식점업 사업자가 면세 농·축·수·임산물을 원재료로 사용",
         threshold=(
             f"직전 연도 매출(공급대가) {rule.sales_lower:,}원 이상 ~ {rule.sales_upper:,}원 미만 구간"

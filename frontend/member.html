@@ -1046,18 +1046,29 @@
       box-shadow:0 18px 40px rgba(26,109,255,.22);
     }
 
-    .opp-title{font-size:22px;font-weight:900;margin:0 0 4px}
+    .opp-header-row{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:4px;flex-wrap:wrap}
+    .opp-title{font-size:22px;font-weight:900;margin:0}
+    .opp-total{text-align:right}
+    .opp-total .lbl{font-size:11.5px;color:var(--muted);font-weight:700;margin-bottom:2px}
+    .opp-total .val{font-size:19px;font-weight:900;color:#2f5fe0}
     .opp-card{border-radius:16px;border:1px solid rgba(15,23,42,.08);background:#fff;padding:18px;margin-bottom:14px}
-    .opp-card .amt-row{display:flex;gap:24px;margin:12px 0;flex-wrap:wrap}
+    .opp-card .amt-row{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:12px 0}
+    @media (max-width:480px){.opp-card .amt-row{grid-template-columns:1fr}}
     .opp-card .amt-row .lbl{font-size:11.5px;color:var(--muted);font-weight:700;margin-bottom:3px}
     .opp-card .amt-row .val{font-size:17px;font-weight:900}
+    .opp-card .amt-row .val.val-green{color:#16a34a}
     .econ-box{background:#f6f8fc;border-radius:10px;padding:12px 14px;margin-top:8px}
     .econ-box .t{font-size:12px;font-weight:800;color:var(--muted);margin-bottom:8px}
     .econ-grid{display:flex;gap:18px;flex-wrap:wrap}
     .econ-grid div{font-size:11.5px;color:var(--muted);font-weight:700}
     .econ-grid b{display:block;font-size:14px;color:var(--text)}
     .econ-grid .neg{color:#dc2626}
-    .verdict{font-size:13px;font-weight:800;color:#dc2626;margin-top:10px}
+    .verdict{
+      display:flex;align-items:flex-start;gap:6px;
+      background:#fbf3f2;border-left:3px solid #e3a9a4;border-radius:8px;
+      padding:8px 12px;margin-top:10px;
+      font-size:12.5px;font-weight:600;color:#9a4a45;line-height:1.5;
+    }
     .rule-foot{font-size:11.5px;color:var(--muted);margin-top:10px;border-top:1px dashed rgba(15,23,42,.1);padding-top:8px;line-height:1.8}
     .sim-controls-row{display:flex;align-items:center;gap:12px;margin:14px 0}
     .stepper{display:flex;border:1px solid rgba(15,23,42,.12);border-radius:999px;overflow:hidden}
@@ -1065,7 +1076,12 @@
     .sim-controls-row input[type=range]{flex:1}
     .sim-result-row{font-size:14px}
     .sim-result-row .after{color:#16a34a;font-weight:900;font-size:18px}
-    .ai-note{background:#eef4ff;border-radius:10px;padding:10px 14px;margin-top:12px;font-size:13px;font-weight:700;color:#2f5fe0}
+    .ai-note{
+      background:#f7f8fb;border-left:3px solid #B9C6EE;border-radius:8px;
+      padding:10px 14px;margin-top:12px;font-size:12.5px;font-weight:500;
+      color:#525a6e;line-height:1.55;
+    }
+    .ai-note b, .ai-note strong{color:#39415a;font-weight:800}
     .tax-line{display:flex;justify-content:space-between;padding:8px 0;font-size:13.5px}
     .tax-line span{color:var(--muted);font-weight:700}
     .tax-line b{font-weight:900}
@@ -1085,6 +1101,17 @@
     .sim-mini-card.best{border-color:#1A6DFF;box-shadow:0 0 0 3px rgba(26,109,255,.12)}
     .sim-mini-card .lbl{font-size:12.5px;font-weight:800;margin-bottom:8px}
     .sim-mini-card .delta{font-size:17px;font-weight:900;color:#1A6DFF}
+    .why-details{margin-top:10px;font-size:12.5px}
+    .why-details summary{
+      list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:4px;
+      color:#6b7280;font-weight:700;font-size:12.5px;padding:4px 0;
+    }
+    .why-details summary:hover{color:#3d4452}
+    .why-details summary::-webkit-details-marker{display:none}
+    .why-details summary::after{content:"▾";font-size:10px;transition:transform .15s}
+    .why-details[open] summary::after{transform:rotate(180deg)}
+    .why-details p{margin:6px 0 0;color:var(--muted);line-height:1.6;font-size:12.5px}
+    .why-details + .why-details{margin-top:4px}
 </style>
 </head>
 
@@ -1584,8 +1611,13 @@
         </div>
 
         <div class="report-card" id="tsOpportunityCard" style="margin-bottom:12px">
-          <p class="opp-title">💰 TS가 찾은 기회</p>
-          <div id="oppSummaryLine" class="empty-note">계산 후 표시됩니다.</div>
+          <div class="opp-header-row">
+            <p class="opp-title">💰 TS가 찾은 기회</p>
+            <div class="opp-total">
+              <div class="lbl">예상 세액공제</div>
+              <div class="val" id="oppTotalCredit">-</div>
+            </div>
+          </div>
           <div id="oppList"></div>
         </div>
 
@@ -1689,6 +1721,6 @@
     }, true);
   </script>
 
-  <script src="./member.js?v=20260907c"></script>
+  <script src="./member.js?v=20260907m"></script>
 </body>
 </html>
