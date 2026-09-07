@@ -405,6 +405,10 @@
               <button class="btn outline" id="btnSampleHero" type="button">예시 결과 보기</button>
             </div>
 
+            <div class="cta-row" style="margin-top:10px;">
+              <button class="btn outline" id="btnGuestHero" type="button">로그인 없이 게스트로 접속하기</button>
+            </div>
+
             <div class="subnote">
               <span class="ic" aria-hidden="true">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="rgba(22,163,74,.95)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -666,6 +670,7 @@
     document.querySelectorAll(".reveal").forEach(el => io.observe(el));
 
     function goStart(){ window.location.href = "./login.html"; }
+    function goGuest(){ window.location.href = "./member.html"; }
     function goSample(){
       document.querySelector(".hero-visual")?.scrollIntoView({ behavior: "smooth", block: "center" });
     }
@@ -676,6 +681,8 @@
     });
     const btnSample = $("#btnSampleHero");
     if (btnSample) btnSample.addEventListener("click", goSample);
+    const btnGuest = $("#btnGuestHero");
+    if (btnGuest) btnGuest.addEventListener("click", goGuest);
 
     const btnMenu = $("#btnMenu");
     if (btnMenu){

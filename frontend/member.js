@@ -2706,8 +2706,8 @@
 
     try {
       const base = getApiBase();
-      const url = `${base}/api/v1/calc/run`;
       const token = getToken();
+      const url = `${base}${token ? "/api/v1/calc/run" : "/api/v1/calc/run-guest"}`;
 
       const headers = { "Content-Type": "application/json" };
       if (token) headers["Authorization"] = `Bearer ${token}`;

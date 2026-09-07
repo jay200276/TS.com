@@ -106,6 +106,10 @@ function wire(){
     window.location.href = "./register.html";
   });
 
+  $("btnGuest")?.addEventListener("click", ()=>{
+    window.location.href = "./member.html";
+  });
+
   // ✅ 간편 로그인 버튼: OAuth start URL로 이동
 function goOAuth(provider){
   clearError();
