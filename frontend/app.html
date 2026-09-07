@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TS 결과 분석 — 이번 달 TS 진단</title>
+<link rel="icon" href="ts-logo.png" />
+<link rel="stylesheet" href="member-style.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  .screen{display:none}
+  .screen.active{display:block}
+  .step-shell{max-width:640px;margin:0 auto}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-weight:800;font-size:13px;margin-bottom:6px;color:var(--muted)}
+  .field select, .field input[type=text], .field input[type=number]{
+    width:100%;padding:11px 12px;border-radius:12px;border:1px solid rgba(15,23,42,.12);
+    background:#fff;font-size:14px;color:var(--text)
+  }
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .dropzone{border:2px dashed rgba(76,123,240,.35);border-radius:14px;padding:22px;text-align:center;color:var(--muted);cursor:pointer;background:rgba(76,123,240,.04);margin-bottom:14px}
+  .dropzone.hasfile{border-color:#4C7BF0;color:var(--text);background:rgba(76,123,240,.08)}
+  .btn-block{display:block;width:100%;text-align:center;padding:13px 20px;border-radius:999px;border:none;font-weight:900;font-size:14.5px;cursor:pointer;margin-top:10px}
+  .btn-block.primary{background:linear-gradient(135deg,#4C7BF0,#2f5fe0);color:#fff}
+  .btn-block.ghost{background:#fff;border:1px solid rgba(15,23,42,.12);color:var(--text)}
+  .loading-row{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px;padding:16px 0}
+  .report-grid2{display:grid;grid-template-columns:1.1fr .9fr;gap:12px;margin-bottom:12px}
+  @media (max-width:820px){.report-grid2{grid-template-columns:1fr}}
+  .opp-title{font-size:22px;font-weight:900;margin:0 0 4px}
+  .opp-card{border-radius:16px;border:1px solid rgba(15,23,42,.08);background:#fff;padding:18px;margin-bottom:14px}
+  .opp-card .amt-row{display:flex;gap:24px;margin:12px 0}
+  .opp-card .amt-row .lbl{font-size:11.5px;color:var(--muted);font-weight:700;margin-bottom:3px}
+  .opp-card .amt-row .val{font-size:17px;font-weight:900}
+  .econ-box{background:#f6f8fc;border-radius:10px;padding:12px 14px;margin-top:8px}
+  .econ-box .t{font-size:12px;font-weight:800;color:var(--muted);margin-bottom:8px}
+  .econ-grid{display:flex;gap:18px;flex-wrap:wrap}
+  .econ-grid div{font-size:11.5px;color:var(--muted);font-weight:700}
+  .econ-grid b{display:block;font-size:14px;color:var(--text)}
+  .econ-grid .neg{color:#dc2626}
+  .verdict{font-size:13px;font-weight:800;color:#dc2626;margin-top:10px}
+  .rule-foot{font-size:11.5px;color:var(--muted);margin-top:10px;border-top:1px dashed rgba(15,23,42,.1);padding-top:8px;line-height:1.8}
+  .sim-controls-row{display:flex;align-items:center;gap:12px;margin:14px 0}
+  .stepper{display:flex;border:1px solid rgba(15,23,42,.12);border-radius:999px;overflow:hidden}
+  .stepper button{width:32px;height:32px;border:none;background:#f6f8fc;font-weight:900;font-size:16px;cursor:pointer}
+  .sim-controls-row input[type=range]{flex:1}
+  .sim-result-row{font-size:14px}
+  .sim-result-row .after{color:#16a34a;font-weight:900;font-size:18px}
+  .ai-note{background:#eef4ff;border-radius:10px;padding:10px 14px;margin-top:12px;font-size:13px;font-weight:700;color:#2f5fe0}
+  #precisionTable input{width:90px;padding:6px 7px;border-radius:8px;border:1px solid rgba(15,23,42,.12);font-size:12.5px}
+  #precisionTable input[type=text]{width:76px}
+  #precisionTable td{padding:6px 4px}
+  #precisionTable .rm-row{background:none;border:none;color:#b91c1c;font-weight:900;cursor:pointer;font-size:15px}
+  .tax-line{display:flex;justify-content:space-between;padding:8px 0;font-size:13.5px}
+  .tax-line span{color:var(--muted);font-weight:700}
+  .tax-line b{font-weight:900}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="logo"><img src="ts-logo.png" alt="TS Logo" /></div>
+      <div class="brand-text">
+        <div class="t1">TS (tax secretary)</div>
+        <div class="t2" id="topSub">사업자 정보 입력 → 결과 분석</div>
+      </div>
+    </div>
+    <a class="logout" href="index.html" style="text-decoration:none;display:inline-block">홈으로</a>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- 화면 ①: 업로드 -->
+  <section id="screen1" class="screen active">
+    <div class="step-shell">
+      <h1>사업자 정보 &amp; 데이터 업로드</h1>
+      <p class="subtitle">POS·매입 데이터를 업로드하면 AI가 놓치고 있는 문제와 기회를 찾아드려요.</p>
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="row2">
+          <div class="field"><label>사업자 유형</label>
+            <select id="biz_type"><option>개인사업자</option><option>법인사업자</option></select>
+          </div>
+          <div class="field"><label>과세 유형</label>
+            <select id="tax_type"><option>일반과세자</option><option>간이과세자</option></select>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>업종</label>
+            <select id="industry_detail">
+              <option>한식</option><option>중식</option><option>일식</option><option>양식</option>
+              <option>치킨</option><option>카페</option><option>주점</option><option>기타</option>
+            </select>
+          </div>
+          <div class="field"><label>전년도 매출(원)</label>
+            <input type="number" id="prior_year_sales" placeholder="예: 180000000" />
+          </div>
+        </div>
+        <div class="field"><label>상호명 (선택)</label>
+          <input type="text" id="store_name" placeholder="예: 성수한식당" />
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" id="precisionToggle">
+          <label style="font-weight:800;font-size:13px;color:var(--muted);margin:0">✏️ 정밀 입력 (엑셀 없이 월별로 직접 입력)</label>
+          <span id="precisionArrow" style="color:var(--muted);font-size:13px">펼치기 ▾</span>
+        </div>
+        <div id="precisionBody" style="display:none;margin-top:14px">
+          <div style="overflow-x:auto">
+            <table class="bench-table" id="precisionTable">
+              <thead><tr>
+                <th>월</th><th>매출</th><th>원재료비</th><th>인건비</th><th>임대료</th><th>기타비용</th>
+                <th>카드매출</th><th>현금영수증</th><th>면세농산물매입</th><th>방문객수</th><th></th>
+              </tr></thead>
+              <tbody id="precisionRows"></tbody>
+            </table>
+          </div>
+          <button class="btn-block ghost" id="btnAddRow" style="margin-top:10px">+ 월 추가</button>
+          <button class="btn-block primary" id="btnPrecision" style="margin-top:8px">정밀 입력으로 분석하기</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <label style="font-weight:800;font-size:13px;color:var(--muted);display:block;margin-bottom:8px">POS/매입 데이터 업로드 (.xlsx)</label>
+        <div class="dropzone" id="dropzone">
+          <div id="dropzone-text">클릭해서 엑셀 파일 선택 (월, 매출, 원재료비, 인건비, 임대료, 기타비용 컬럼 필요)</div>
+          <input type="file" id="fileInput" accept=".xlsx" style="display:none" />
+        </div>
+        <button class="btn-block primary" id="btnUpload">업로드한 데이터로 분석하기</button>
+        <button class="btn-block ghost" id="btnSample">✨ 샘플 데이터로 체험하기</button>
+      </div>
+
+      <div id="loadingBox" class="loading-row" style="display:none">분석 중입니다...</div>
+      <div id="errorBox" style="display:none;color:#b91c1c;font-weight:700;margin-top:12px;font-size:13.5px"></div>
+    </div>
+  </section>
+
+  <!-- 화면 ②: 결과 분석 -->
+  <section id="screen2" class="screen">
+    <h1 id="dashTitle">계산기</h1>
+    <p class="subtitle" id="periodLabel">입력하신 내용을 바탕으로 분석한 결과입니다.</p>
+
+    <div class="risk-banner" id="riskBanner">
+      <span class="risk-banner-icon">⚠️</span>
+      <div class="risk-banner-text">
+        <div class="risk-banner-title" id="riskBannerTitle">-</div>
+        <div class="risk-banner-detail" id="riskBannerDetail">-</div>
+      </div>
+    </div>
+
+    <div class="kpi-grid" id="kpiGrid" style="margin-bottom:12px"></div>
+
+    <div class="report-card benchmark-card" style="margin-bottom:12px">
+      <h3>벤치마크 비교</h3>
+      <div id="benchmarkSummaryBox" style="margin-bottom:10px"></div>
+      <div style="overflow-x:auto">
+        <table class="bench-table">
+          <thead><tr><th>지표</th><th>내 값</th><th>업종 중앙값</th><th>차이(%p)</th><th>레벨</th></tr></thead>
+          <tbody id="benchmarkTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="report-card" style="margin-bottom:12px">
+      <h3>핵심 Benchmark 비교</h3>
+      <div style="height:280px;"><canvas id="benchChartCanvas"></canvas></div>
+    </div>
+
+    <div class="report-grid2">
+      <div class="report-card">
+        <h3>종합 진단</h3>
+        <div id="diagnosisSummaryBox"></div>
+      </div>
+      <div class="report-card">
+        <h3>재무 구조 요약</h3>
+        <div id="financialStructureBox"></div>
+      </div>
+    </div>
+
+    <div class="report-card" style="margin-bottom:12px">
+      <p class="opp-title">💰 TS가 찾은 기회</p>
+      <p class="subtitle" id="oppSummaryLine" style="margin-bottom:14px"></p>
+      <div id="oppList"></div>
+    </div>
+
+    <div class="report-card" style="margin-bottom:12px">
+      <h3>📈 바꾸면 얼마나 달라질까요? — 인건비 조정 시뮬레이션</h3>
+      <div id="simLabel" style="font-weight:800;margin-top:10px">인건비 -5% 조정 시</div>
+      <div class="sim-controls-row">
+        <div class="stepper"><button id="simMinus">-</button><button id="simPlus">+</button></div>
+        <input type="range" id="laborSlider" min="0" max="20" step="1" value="5" />
+      </div>
+      <div class="sim-result-row">현재 예상 이익 <b id="simBase">-</b> → <span class="after" id="simAfter">-</span></div>
+      <div class="ai-note">💡 <span id="simAiReco">-</span></div>
+    </div>
+
+    <div class="report-grid2">
+      <div class="report-card">
+        <h3>세금 브리프 (연)</h3>
+        <div id="reportTaxBrief"></div>
+      </div>
+      <div class="report-card">
+        <h3>가장 먼저 할 일</h3>
+        <div id="actionSummaryBox"></div>
+      </div>
+    </div>
+
+    <p class="subtitle" style="text-align:center;margin-top:10px" id="disclaimerFoot"></p>
+  </section>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

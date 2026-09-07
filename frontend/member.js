@@ -152,6 +152,9 @@
   const inpPriorYearSales = $("inpPriorYearSales");
   const inpPayrollTotal = $("inpPayrollTotal");
   const inpIndustryCodeManual = $("inpIndustryCodeManual");
+  const inpCardSalesAmount = $("inpCardSalesAmount");
+  const inpCashReceiptSalesAmount = $("inpCashReceiptSalesAmount");
+  const inpVisitCount = $("inpVisitCount");
 
   const btnMonthToday = $("btnMonthToday");
   const inpMonthDisplay = $("inpMonthDisplay");
@@ -610,7 +613,10 @@
       purchaseExemptAgri: inpPurchaseExemptAgri?.value || "",
       priorYearSales: inpPriorYearSales?.value || "",
       payrollTotal: inpPayrollTotal?.value || "",
-      industryCodeManual: inpIndustryCodeManual?.value || ""
+      industryCodeManual: inpIndustryCodeManual?.value || "",
+      cardSalesAmount: inpCardSalesAmount?.value || "",
+      cashReceiptSalesAmount: inpCashReceiptSalesAmount?.value || "",
+      visitCount: inpVisitCount?.value || ""
     };
     localStorage.setItem(LS_MEMBER_DRAFT_KEY, JSON.stringify(draft));
   }
@@ -639,6 +645,9 @@
       if (typeof d.priorYearSales === "string" && inpPriorYearSales) inpPriorYearSales.value = d.priorYearSales;
       if (typeof d.payrollTotal === "string" && inpPayrollTotal) inpPayrollTotal.value = d.payrollTotal;
       if (typeof d.industryCodeManual === "string" && inpIndustryCodeManual) inpIndustryCodeManual.value = d.industryCodeManual;
+      if (typeof d.cardSalesAmount === "string" && inpCardSalesAmount) inpCardSalesAmount.value = d.cardSalesAmount;
+      if (typeof d.cashReceiptSalesAmount === "string" && inpCashReceiptSalesAmount) inpCashReceiptSalesAmount.value = d.cashReceiptSalesAmount;
+      if (typeof d.visitCount === "string" && inpVisitCount) inpVisitCount.value = d.visitCount;
     } catch (_) {}
   }
 
@@ -648,7 +657,8 @@
     inpEmployees, selTaxpayerGuess,
     inpMaterial, inpRent, inpOther,
     inpPurchaseTaxInvoice, inpPurchaseCard, inpPurchaseCashReceipt,
-    inpPurchaseExemptAgri, inpPriorYearSales, inpPayrollTotal, inpIndustryCodeManual
+    inpPurchaseExemptAgri, inpPriorYearSales, inpPayrollTotal, inpIndustryCodeManual,
+    inpCardSalesAmount, inpCashReceiptSalesAmount, inpVisitCount
   ].filter(Boolean).forEach((el) => {
     el.addEventListener("input", () => {
       saveDraft();
@@ -666,7 +676,8 @@
     inpSales, inpCostTotal, inpLabor,
     inpMaterial, inpRent, inpOther,
     inpPurchaseTaxInvoice, inpPurchaseCard, inpPurchaseCashReceipt,
-    inpPurchaseExemptAgri, inpPriorYearSales, inpPayrollTotal
+    inpPurchaseExemptAgri, inpPriorYearSales, inpPayrollTotal,
+    inpCardSalesAmount, inpCashReceiptSalesAmount
   ].filter(Boolean).forEach((el) => {
     el.addEventListener("input", () => {
       formatWonLiveInput(el);
@@ -747,7 +758,7 @@
     closeMonthPopover();
   });
 
-  btnFillExample.addEventListener("click", (e) => {
+  btnFillExample.addEventListener("click", async (e) => {
     e.preventDefault();
     clearError();
 
@@ -777,8 +788,16 @@
     selTaxpayerGuess.value = "";
     if (inpIndustryCodeManual) inpIndustryCodeManual.value = "";
 
+    if (inpCardSalesAmount) setWonInput(inpCardSalesAmount, 24000000);
+    if (inpCashReceiptSalesAmount) setWonInput(inpCashReceiptSalesAmount, 3000000);
+    if (inpVisitCount) inpVisitCount.value = "2500";
+
     saveDraft();
     renderCostMismatchWarning();
+
+    // 예시값을 다 채웠으니 우리가 보여줄 수 있는 결과(구버전 리포트 + TS가 찾은 기회 +
+    // AI 진단 + 액션 시뮬레이터)를 전부 정밀 모드로 바로 계산해서 보여준다.
+    await runCalc("pro");
   });
 
   btnGoPro.addEventListener("click", (e) => {
@@ -2706,18 +2725,31 @@
 
     try {
       const base = getApiBase();
-      const token = getToken();
-      const url = `${base}${token ? "/api/v1/calc/run" : "/api/v1/calc/run-guest"}`;
+      let token = getToken();
+      let url = `${base}${token ? "/api/v1/calc/run" : "/api/v1/calc/run-guest"}`;
 
       const headers = { "Content-Type": "application/json" };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      const res = await fetch(url, {
+      let res = await fetch(url, {
         method: "POST",
         headers,
         body: JSON.stringify(payload),
         cache: "no-store",
       });
+
+      // 로그인 토큰이 만료/무효한 경우, 저장된 토큰을 지우고 게스트 계산으로 자동 재시도한다.
+      if (res.status === 401 && token) {
+        localStorage.removeItem(LS_TOKEN_KEY);
+        token = "";
+        url = `${base}/api/v1/calc/run-guest`;
+        res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          cache: "no-store",
+        });
+      }
 
       const text = await res.text();
       let data = null;
@@ -2750,6 +2782,8 @@
       console.log("[TS] calc response:", runId, data);
 
       sessionStorage.setItem("ts_last_response_v1", JSON.stringify(data));
+
+      runV2Opportunity(payload).catch((e) => console.warn("[TS] v2 opportunity fetch failed:", e));
 
       try {
         lastRecords = await fetchRecords();
@@ -2826,6 +2860,193 @@
   const btnExcelCancel = $("btnExcelCancel");
   const btnExcelCommit = $("btnExcelCommit");
   const excelCommitResultBox = $("excelCommitResultBox");
+
+  // ============================================================
+  // v2 Opportunity Finder / Action Simulator (기존 입력값 재사용)
+  // ============================================================
+  const fmtWonFull = (v) => (v == null ? "-" : `${Math.round(v).toLocaleString("ko-KR")}원`);
+  let v2LastMonthly = null;
+
+  function buildV2BusinessInfo(payload) {
+    return {
+      store_name: null,
+      biz_type: "개인사업자",
+      tax_type: payload.mode === "pro" && selTaxpayerGuess.value === "SIMPLE" ? "간이과세자" : "일반과세자",
+      taxpayer_type: "PERSONAL",
+      industry: "음식점업",
+      industry_detail: String(payload.business_type_detail || "한식").replace(/^[^가-힣]*/, "").trim() || "한식",
+      industry_key: "FOODSVC",
+      prior_year_sales_vat_included: Number(payload.prior_year_sales_vat_included || 0),
+      analysis_period_label: payload.month || null,
+      region_code: payload.region_code || "ALL",
+    };
+  }
+
+  function buildV2Monthly(payload) {
+    const materialCost = Number(payload.material_cost_vat_included || 0);
+    const rent = Number(payload.rent_cost_vat_included || 0);
+    const other = Number(payload.other_cost_vat_included || 0);
+    const detailedSum = materialCost + rent + other;
+    const cost = Number(payload.cost_vat_included || 0);
+    const fallbackMaterial = detailedSum > 0 ? materialCost : Math.round(cost * 0.6);
+    const fallbackRent = detailedSum > 0 ? rent : Math.round(cost * 0.2);
+    const fallbackOther = detailedSum > 0 ? other : Math.max(0, cost - fallbackMaterial - fallbackRent);
+
+    return {
+      month: payload.month || "2026-01",
+      sales: Number(payload.revenue_vat_included || 0),
+      material_cost: fallbackMaterial,
+      labor_cost: Number(payload.labor_cost || 0),
+      rent: fallbackRent,
+      other_cost: fallbackOther,
+      card_sales_amount: getWonInput(inpCardSalesAmount),
+      cash_receipt_amount: getWonInput(inpCashReceiptSalesAmount),
+      exempt_agri_purchase: Number(payload.purchase_exempt_agri_vat_exempt || 0),
+      visit_count: parseInt(String(inpVisitCount?.value || "0").replace(/[^\d]/g, ""), 10) || 0,
+    };
+  }
+
+  async function runV2Opportunity(payload) {
+    const business_info = buildV2BusinessInfo(payload);
+    const monthly = [buildV2Monthly(payload)];
+    v2LastMonthly = monthly;
+
+    const base = getApiBase();
+    const res = await fetch(`${base}/api/v2/analyze`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ business_info, monthly }),
+    });
+    if (!res.ok) {
+      $("oppSummaryLine").textContent = "절세 기회 분석에 필요한 정보가 부족합니다. (매출·인건비 등 기본 입력을 확인해주세요)";
+      $("oppList").innerHTML = "";
+      return;
+    }
+    const data = await res.json();
+    renderV2WowBanner(data);
+    renderV2Diagnosis(data);
+    renderV2Opportunities(data);
+    renderV2ScenarioCards(data);
+    renderV2Simulator(data);
+  }
+
+  function renderV2WowBanner(data) {
+    const box = $("wowBanner");
+    if (!data.top_change) { box.style.display = "none"; return; }
+    box.style.display = "block";
+    $("wowHeadline").textContent = data.top_change.headline;
+    $("wowDetail").textContent = data.top_change.detail;
+  }
+
+  function renderV2Diagnosis(data) {
+    const grid = $("aiDiagGrid");
+    grid.innerHTML = "";
+    (data.diagnosis || []).forEach((d) => {
+      const valueLine = d.value_from ? `${d.value_from} → ${d.value_to}` : d.value_to;
+      grid.insertAdjacentHTML(
+        "beforeend",
+        `<div class="diag-card">
+          <div class="icon">${d.icon}</div>
+          <div class="val">${escapeHtml(valueLine)}</div>
+          <div class="lbl">${escapeHtml(d.title)}</div>
+          <div class="cmt">${escapeHtml(d.ai_comment)}</div>
+        </div>`
+      );
+    });
+  }
+
+  function renderV2ScenarioCards(data) {
+    const row = $("simCardsRow");
+    row.innerHTML = "";
+    const options = data.scenarios?.options || [];
+    const recommendedId = data.scenarios?.recommended?.action_id;
+    options.forEach((opt) => {
+      const isBest = opt.action_id === recommendedId;
+      row.insertAdjacentHTML(
+        "beforeend",
+        `<div class="sim-mini-card ${isBest ? "best" : ""}">
+          <div class="lbl">${escapeHtml(opt.label)}</div>
+          <div class="delta">+${fmtWonFull(opt.profit_delta)}</div>
+        </div>`
+      );
+    });
+    const recoBox = $("simRecoBox");
+    if (data.scenarios?.recommendation_text) {
+      recoBox.style.display = "flex";
+      $("simRecoText").textContent = data.scenarios.recommendation_text;
+    } else {
+      recoBox.style.display = "none";
+    }
+  }
+
+  function renderV2Opportunities(data) {
+    $("oppSummaryLine").textContent = data.opportunity_summary_line;
+    const list = $("oppList");
+    list.innerHTML = "";
+    data.opportunities.forEach((o) => {
+      let html = `<div class="opp-card">`;
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3 style="margin:0;font-size:15.5px">${escapeHtml(o.title)}</h3><span class="${levelChipClass(o.applicability === "적용 가능성 높음" ? "GOOD" : "WARN")}">${escapeHtml(o.applicability)}</span></div>`;
+
+      if (o.category === "경영 임계점") {
+        html += `<div class="amt-row">
+          <div><div class="lbl">현재 매출</div><div class="val">${fmtWonFull(o.current_sales)}</div></div>
+          <div><div class="lbl">손익분기점</div><div class="val">${fmtWonFull(o.breakeven_sales)}</div></div>
+        </div>`;
+      } else {
+        html += `<div class="amt-row">
+          <div><div class="lbl">${escapeHtml(o.target_amount_label || "대상 금액")}</div><div class="val">${fmtWonFull(o.target_amount)}</div></div>
+          <div><div class="lbl">${escapeHtml(o.expected_credit_label || "예상 공제액")}</div><div class="val" style="color:#2f5fe0">${fmtWonFull(o.expected_credit)}</div></div>
+        </div>`;
+      }
+
+      html += `<p style="font-size:13px;color:var(--muted);line-height:1.6">${escapeHtml(o.why)}</p>`;
+
+      if (o.marginal_analysis) {
+        const m = o.marginal_analysis;
+        html += `<div class="econ-box">
+          <div class="t">경제성 판단</div>
+          <div class="econ-grid">
+            <div>추가 필요 지출<b>${fmtWonFull(m.extra_spend)}</b></div>
+            <div>예상 추가 혜택<b>${fmtWonFull(m.extra_credit)}</b></div>
+            <div>순효과<b class="neg">${fmtWonFull(m.net_effect)}</b></div>
+          </div>
+        </div>
+        <div class="verdict">${escapeHtml(m.verdict)}</div>`;
+      }
+
+      if (o.rule_meta) {
+        const r = o.rule_meta;
+        html += `<div class="rule-foot">
+          근거 ${escapeHtml(r.source_url)}<br/>
+          기준일 ${escapeHtml(r.updated_at)} · 산식 ${escapeHtml(r.formula)} · 한도 ${escapeHtml(r.limit)}<br/>
+          필요 증빙 ${escapeHtml(r.required_evidence)}
+        </div>`;
+      }
+      html += `</div>`;
+      list.insertAdjacentHTML("beforeend", html);
+    });
+  }
+
+  function renderV2Simulator(data) {
+    const latest = data.monthly[data.monthly.length - 1];
+    const baseProfit = latest.profit;
+    const slider = $("laborSlider");
+    function update() {
+      const pct = parseFloat(slider.value);
+      $("simLabel").textContent = `인건비 -${pct}% 조정 시`;
+      const saved = latest.labor_cost * (pct / 100);
+      const after = baseProfit + saved;
+      $("simBase").textContent = fmtWonFull(baseProfit);
+      $("simAfter").textContent = fmtWonFull(after);
+      $("simAiReco").textContent = pct <= 0
+        ? "슬라이더를 움직여 인건비 조정 효과를 확인해보세요."
+        : `인건비를 ${pct}% 줄일 경우, 월 약 ${Math.round(saved / 10000)}만원의 추가 이익이 예상됩니다. 인력 운영 효율화를 검토해보세요.`;
+    }
+    slider.oninput = update;
+    $("simMinus").onclick = () => { slider.value = Math.max(0, parseFloat(slider.value) - 1); update(); };
+    $("simPlus").onclick = () => { slider.value = Math.min(20, parseFloat(slider.value) + 1); update(); };
+    update();
+  }
 
   let excelValidPayloads = [];
 

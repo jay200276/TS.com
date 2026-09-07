@@ -24,6 +24,7 @@ from app.models import User, AccessToken, Record
 from app.security import hash_password, verify_password, generate_token, hash_token
 from app.deps import get_current_user
 from app.routers_oauth import router as oauth_router
+from app.routers_opportunity import router as opportunity_router
 
 # ✅ 계산 엔진
 from app.engine.tax_engine import (
@@ -80,10 +81,13 @@ Base.metadata.create_all(bind=engine)
 # ---------------------------------------------------------------------
 app = FastAPI(title="TS (tax secretary)", version="0.2.0")
 app.include_router(oauth_router)
+app.include_router(opportunity_router)
 
 _cors_allow_origins = [
     "http://127.0.0.1:5500",
     "http://localhost:5500",
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
 ]
 _extra_origin = os.environ.get("FRONTEND_ORIGIN", "").strip()
 if _extra_origin:
@@ -818,9 +822,17 @@ def _make_calc_response(req: CalcRequest, record_id: Optional[str]) -> CalcOrErr
     income_tax = compute_income_tax(taxable_income=taxable_income_est, year=year, meta=em)
     local_tax = compute_local_income_tax(income_tax)
 
+    payroll_for_insurance = _safe_int(req.payroll_total_month)
+    if payroll_for_insurance <= 0:
+        payroll_for_insurance = _safe_int(req.labor_cost)
+        if payroll_for_insurance > 0:
+            em.assumptions.append(
+                "급여총액(정밀 입력)이 없어 월 인건비를 급여총액 추정치로 대신 사용했습니다."
+            )
+
     insurance = compute_insurance_employer_estimate(
         employees_count=_safe_int(req.employees_count),
-        payroll_total_month=_safe_int(req.payroll_total_month),
+        payroll_total_month=payroll_for_insurance,
         meta=em,
     )
     annual_insurance_est = int(insurance.get("employer_total", 0)) * 12
