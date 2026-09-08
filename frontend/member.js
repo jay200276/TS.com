@@ -19,7 +19,9 @@
   let benchChart = null;
   let financialChart = null;
   let historyTrendChart = null;
+  let taxDonutChart = null;
   let lastResponse = null;
+  let lastV2Data = null;
   let lastRecords = [];
   let historySelectedMonth = "";
   let historyPickerYear = new Date().getFullYear();
@@ -1083,7 +1085,7 @@
       banner.id = "riskBanner";
       banner.className = "risk-banner hidden";
       banner.innerHTML = `
-        <span class="risk-banner-icon">⚠️</span>
+        <span class="risk-banner-icon"><img src="./icon-alert-warning.png" alt="" /></span>
         <div class="risk-banner-text">
           <div class="risk-banner-title" id="riskBannerTitle">-</div>
           <div class="risk-banner-detail" id="riskBannerDetail">-</div>
@@ -1116,7 +1118,7 @@
       card.className = "report-card";
       card.style.marginBottom = "12px";
       card.innerHTML = `
-        <div class="history-head"><div class="history-title-inline"><h3 style="margin:0;">이전 기록</h3></div><div class="history-month-control"><button id="btnHistoryCalendar" class="history-calendar-btn" type="button" title="이전 기록 조회">🗓️</button><div id="historyMonthPopover" class="history-month-popover hidden"><div class="history-month-popover-head"><button id="btnHistoryPrevYear" class="history-month-nav-btn" type="button" aria-label="이전 연도">‹</button><div id="historyMonthPopoverYear" class="history-month-popover-year">2026</div><button id="btnHistoryNextYear" class="history-month-nav-btn" type="button" aria-label="다음 연도">›</button></div><div id="historyMonthPopoverGrid" class="history-month-popover-grid"></div><div class="history-month-popover-foot"><button id="btnHistoryClear" class="history-month-foot-btn" type="button">지우기</button><button id="btnHistoryThis" class="history-month-foot-btn primary" type="button">이번 달</button></div></div></div></div>
+        <div class="history-head"><div class="history-title-inline"><h3 style="margin:0;"><img src="./icon-trend-up.png" alt="" style="width:20px;height:20px;vertical-align:-4px;margin-right:6px;" />이전 기록</h3></div><div class="history-month-control"><button id="btnHistoryCalendar" class="history-calendar-btn" type="button" title="이전 기록 조회">🗓️</button><div id="historyMonthPopover" class="history-month-popover hidden"><div class="history-month-popover-head"><button id="btnHistoryPrevYear" class="history-month-nav-btn" type="button" aria-label="이전 연도">‹</button><div id="historyMonthPopoverYear" class="history-month-popover-year">2026</div><button id="btnHistoryNextYear" class="history-month-nav-btn" type="button" aria-label="다음 연도">›</button></div><div id="historyMonthPopoverGrid" class="history-month-popover-grid"></div><div class="history-month-popover-foot"><button id="btnHistoryClear" class="history-month-foot-btn" type="button">지우기</button><button id="btnHistoryThis" class="history-month-foot-btn primary" type="button">이번 달</button></div></div></div></div>
         <div id="historyTrendWrap" style="margin-bottom:16px;">
           <div id="historyTrendEmpty" class="empty-note">2개월 이상 기록이 쌓이면 추이 차트가 표시됩니다.</div>
           <div id="historyTrendChartBox" style="height:220px; display:none;"><canvas id="historyTrendCanvas"></canvas></div>
@@ -1134,7 +1136,7 @@
       const benchCard = document.createElement("div");
       benchCard.className = "report-card";
       benchCard.innerHTML = `
-        <h3>핵심 Benchmark 비교</h3>
+        <h3><img src="./icon-chart-compare.png" alt="" style="width:20px;height:20px;vertical-align:-4px;margin-right:6px;" />핵심 Benchmark 비교</h3>
         <div style="height:300px;"><canvas id="benchChartCanvas"></canvas></div>
       `;
 
@@ -1239,6 +1241,82 @@
 
         bar.appendChild(wrap);
       }
+    }
+
+    if (!$("tsDashShell")) {
+      const shell = document.createElement("div");
+      shell.id = "tsDashShell";
+      shell.className = "ts-dash-shell";
+      shell.innerHTML = `
+        <div class="ts-dash-main" id="tsDashMain">
+          <nav class="ts-dash-nav">
+            <a class="ts-dash-nav-item" href="#"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11.5L12 4l8 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-5h4v5h3a1 1 0 0 0 1-1v-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>대시보드</a>
+            <a class="ts-dash-nav-item active" href="#"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="12" width="4" height="8" stroke="currentColor" stroke-width="1.8"/><rect x="10" y="7" width="4" height="13" stroke="currentColor" stroke-width="1.8"/><rect x="16" y="3" width="4" height="17" stroke="currentColor" stroke-width="1.8"/></svg>절감 분석</a>
+            <a class="ts-dash-nav-item" href="#"><svg viewBox="0 0 24 24" fill="none"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H18a1 1 0 0 1 1 1v15.5a1 1 0 0 1-1 1H6.5A1.5 1.5 0 0 1 5 19V4.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M5 17.5A1.5 1.5 0 0 1 6.5 16H19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>장부 관리</a>
+            <a class="ts-dash-nav-item" href="#"><svg viewBox="0 0 24 24" fill="none"><path d="M6 3h9l3 3v15H6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12h6M9 16h6M9 8h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>세금 신고</a>
+            <a class="ts-dash-nav-item" href="#"><svg viewBox="0 0 24 24" fill="none"><path d="M9 18h6M10 21h4M8 14.5A5 5 0 1 1 16 14.5c-.6.9-1.4 1.6-1.6 2.5H9.6c-.2-.9-1-1.6-1.6-2.5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>절세 도우미</a>
+            <a class="ts-dash-nav-item" href="#"><svg viewBox="0 0 24 24" fill="none"><path d="M3 17l6-6 4 4 8-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 7h6v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>경영 리포트</a>
+            <a class="ts-dash-nav-item" href="#"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 3v2.5M12 18.5V21M21 12h-2.5M5.5 12H3M18 6l-1.8 1.8M7.8 16.2L6 18M18 18l-1.8-1.8M7.8 7.8L6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>설정</a>
+          </nav>
+          <div class="ts-dash-header">
+            <div><h2>이번 달 TS 진단</h2><p>데이터로 확인하는 우리 매장의 개선 기회입니다.</p></div>
+            <div id="tsDashDate" class="ts-dash-date-badge">-</div>
+          </div>
+          <div id="tsDashKpiRow" class="ts-dash-kpi-grid"></div>
+          <div class="ts-dash-two-col" id="tsDashRow1"></div>
+          <div class="ts-dash-two-col" id="tsDashRow2"></div>
+        </div>
+      `;
+      panelResult.insertBefore(shell, panelResult.firstElementChild);
+
+      const main = $("tsDashMain");
+      const kpiRow = $("tsDashKpiRow");
+      const row1 = $("tsDashRow1");
+      const row2 = $("tsDashRow2");
+
+      const banner = $("riskBanner");
+      if (banner) main.insertBefore(banner, kpiRow);
+
+      const chartSectionEl = $("chartSection");
+      const oppSummaryCard = document.createElement("div");
+      oppSummaryCard.id = "tsDashOppSummary";
+      oppSummaryCard.className = "report-card";
+      if (chartSectionEl) row1.appendChild(chartSectionEl);
+      row1.appendChild(oppSummaryCard);
+
+      const simCard = $("tsSimCard");
+      if (simCard) main.insertBefore(simCard, row2);
+
+      const actionsCard = reportActions?.closest(".report-card");
+      if (actionsCard) row2.appendChild(actionsCard);
+
+      const donutCard = document.createElement("div");
+      donutCard.className = "report-card";
+      donutCard.innerHTML = `
+        <h3>예상 세금 구성</h3>
+        <div style="height:180px;position:relative;"><canvas id="taxDonutCanvas"></canvas></div>
+        <div id="taxDonutLegend" class="ts-dash-donut-legend"></div>
+      `;
+      row2.appendChild(donutCard);
+
+      const histCard = $("historySection");
+      if (histCard) main.appendChild(histCard);
+
+      const details = document.createElement("details");
+      details.id = "tsDashDetails";
+      details.className = "ts-dash-details";
+      const summary = document.createElement("summary");
+      summary.textContent = "상세 리포트 더 보기";
+      details.appendChild(summary);
+      const detailsBody = document.createElement("div");
+      detailsBody.className = "ts-dash-details-body";
+      details.appendChild(detailsBody);
+
+      Array.from(panelResult.children)
+        .filter((el) => el !== shell && el !== details)
+        .forEach((el) => detailsBody.appendChild(el));
+
+      panelResult.appendChild(details);
     }
   }
 
@@ -1971,7 +2049,7 @@
         labels: core.map((x) => metricLabel(x?.metric)),
         datasets: [
           {
-            label: "내 값(%)",
+            label: "우리 매장",
             data: core.map((x) => Number(x?.my_value || 0) * 100),
             backgroundColor: "#1A6DFF",
             hoverBackgroundColor: "#3B82F6",
@@ -1982,11 +2060,11 @@
             maxBarThickness: 42
           },
           {
-            label: "평균(%)",
+            label: "업종 평균",
             data: core.map((x) => Number(x?.p50 || 0) * 100),
-            backgroundColor: "#FF6B6B",
-            hoverBackgroundColor: "#FF8787",
-            borderColor: "#E04848",
+            backgroundColor: "#C7D7FA",
+            hoverBackgroundColor: "#D8E4FC",
+            borderColor: "#AEC2F2",
             borderWidth: 1,
             borderRadius: 8,
             borderSkipped: false,
@@ -2654,6 +2732,156 @@
     renderMeta(resp);
     renderCharts(analysis);
     renderHistoryComparison(resp);
+    updateTsDashHeader();
+    renderTsDashboardKpis(analysis);
+    renderTsTaxDonut(analysis);
+    if (lastV2Data) renderTsOppSummary(lastV2Data);
+  }
+
+  function updateTsDashHeader() {
+    const dateEl = $("tsDashDate");
+    if (!dateEl) return;
+    const m = String(inpMonth?.value || "").match(/^(\d{4})-(\d{2})$/);
+    dateEl.textContent = m ? `${m[1]}년 ${Number(m[2])}월` : "-";
+  }
+
+  function renderTsDashboardKpis(analysis) {
+    const wrap = $("tsDashKpiRow");
+    if (!wrap) return;
+
+    const items = Array.isArray(analysis?.benchmarks?.items) ? analysis.benchmarks.items : [];
+    const pick = (metric) => items.find((x) => String(x?.metric) === metric);
+    const cost = pick("COST_RATIO");
+    const labor = pick("LABOR_RATIO");
+    const profit = pick("PROFIT_RATIO");
+
+    const tb = analysis?.tax_brief || {};
+    const taxTotal =
+      safeNumber(tb?.vat?.due_year || 0) +
+      safeNumber(tb?.income_tax?.due_year || 0) +
+      safeNumber(tb?.insurance?.employer_year || 0);
+
+    const deltaHtml = (diffPp, badWhenUp) => {
+      const n = Number(diffPp);
+      if (!Number.isFinite(n) || n === 0) return "";
+      const up = n > 0;
+      const arrow = up ? "▲" : "▼";
+      const bad = badWhenUp ? up : !up;
+      return `<span class="ts-dash-kpi-delta ${bad ? "risk" : "good"}">${arrow}${Math.abs(n).toFixed(1)}%p</span>`;
+    };
+
+    const cardHtml = (iconSrc, label, valueText, deltaInner) => `
+      <div class="ts-dash-kpi-card">
+        <img class="ts-dash-kpi-icon" src="${iconSrc}" alt="" />
+        <div class="ts-dash-kpi-label">${escapeHtml(label)}</div>
+        <div class="ts-dash-kpi-value">${valueText}</div>
+        ${deltaInner}
+      </div>
+    `;
+
+    wrap.innerHTML = [
+      cardHtml("./icon-kpi-cost.png", metricLabel("COST_RATIO"), cost ? ratioToPercent(cost.my_value) : "-", deltaHtml(cost?.diff_pp, true)),
+      cardHtml("./icon-kpi-labor.png", metricLabel("LABOR_RATIO"), labor ? ratioToPercent(labor.my_value) : "-", deltaHtml(labor?.diff_pp, true)),
+      cardHtml("./icon-kpi-profit.png", metricLabel("PROFIT_RATIO"), profit ? ratioToPercent(profit.my_value) : "-", deltaHtml(profit?.diff_pp, false)),
+      cardHtml("./icon-kpi-tax.png", "예상 세금(연)", taxTotal > 0 ? fmtWonFull(taxTotal) : "-", ""),
+    ].join("");
+  }
+
+  function renderTsOppSummary(data) {
+    const wrap = $("tsDashOppSummary");
+    if (!wrap) return;
+
+    const opps = Array.isArray(data?.opportunities) ? data.opportunities : [];
+    const taxSaveTotal = opps
+      .filter((o) => o.category === "절세 기회" && o.eligible)
+      .reduce((sum, o) => sum + (o.expected_credit || 0), 0);
+
+    const analysis = lastResponse?.analysis || {};
+    const items = Array.isArray(analysis?.benchmarks?.items) ? analysis.benchmarks.items : [];
+    const annualRevenue = safeNumber(lastResponse?.result?.annualized?.revenue_vat_included || 0);
+    const overCostItem = items
+      .filter((x) => ["COST_RATIO", "LABOR_RATIO"].includes(String(x?.metric)) && Number(x?.diff_pp || 0) > 0)
+      .sort((a, b) => Number(b?.diff_pp || 0) - Number(a?.diff_pp || 0))[0];
+    const costSaveEstimate = (overCostItem && annualRevenue > 0)
+      ? Math.round(annualRevenue * (Number(overCostItem.diff_pp) / 100))
+      : 0;
+
+    wrap.innerHTML = `
+      <h3 style="margin-bottom:12px;"><img src="./icon-opportunity-bulb.png" alt="" style="width:20px;height:20px;vertical-align:-4px;margin-right:6px;" />TS가 찾은 기회</h3>
+      <div class="ts-opp-summary-row">
+        <div class="ts-opp-summary-card blue">
+          <div class="ts-opp-summary-ic"><img src="./icon-opp-taxsave.png" alt="" /></div>
+          <div>
+            <div class="ts-opp-summary-label">절세 기회</div>
+            <div class="ts-opp-summary-value blue">${taxSaveTotal > 0 ? fmtWonFull(taxSaveTotal) : "-"}</div>
+            <div class="ts-opp-summary-note">세금을 더 줄일 수 있어요.</div>
+          </div>
+        </div>
+        <div class="ts-opp-summary-card amber">
+          <div class="ts-opp-summary-ic"><img src="./icon-opp-costsave.png" alt="" /></div>
+          <div>
+            <div class="ts-opp-summary-label">비용 절감 기회</div>
+            <div class="ts-opp-summary-value amber">${costSaveEstimate > 0 ? fmtWonFull(costSaveEstimate) : "추가 확인 필요"}</div>
+            <div class="ts-opp-summary-note">${overCostItem ? escapeHtml(metricLabel(overCostItem.metric)) + " 중앙값 대비 초과분 연환산" : "현재 비용 구조는 중앙값 이내예요."}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderTsTaxDonut(analysis) {
+    const canvas = $("taxDonutCanvas");
+    const legend = $("taxDonutLegend");
+    if (!canvas || typeof Chart === "undefined") return;
+
+    const tb = analysis?.tax_brief || {};
+    const vat = safeNumber(tb?.vat?.due_year || 0);
+    const income = safeNumber(tb?.income_tax?.due_year || 0);
+    const insurance = safeNumber(tb?.insurance?.employer_year || 0);
+    const total = vat + income + insurance;
+
+    if (taxDonutChart) {
+      taxDonutChart.destroy();
+      taxDonutChart = null;
+    }
+
+    if (total <= 0) {
+      if (legend) legend.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
+      return;
+    }
+
+    const parts = [
+      { label: "부가가치세", value: vat, color: "#1A6DFF" },
+      { label: "종합소득세", value: income, color: "#FF6B6B" },
+      { label: "4대보험(사업주)", value: insurance, color: "#FFAB00" },
+    ].filter((p) => p.value > 0);
+
+    taxDonutChart = new Chart(canvas, {
+      type: "doughnut",
+      data: {
+        labels: parts.map((p) => p.label),
+        datasets: [{ data: parts.map((p) => p.value), backgroundColor: parts.map((p) => p.color), borderWidth: 0 }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        cutout: "68%",
+      },
+    });
+
+    if (legend) {
+      legend.innerHTML = parts.map((p) => `
+        <div class="ts-dash-donut-legend-row">
+          <span><span class="ts-dash-donut-legend-dot" style="background:${p.color}"></span>${escapeHtml(p.label)}</span>
+          <span>${Math.round((p.value / total) * 100)}%</span>
+        </div>
+      `).join("") + `
+        <div class="ts-dash-donut-legend-row" style="border-top:1px solid var(--line); padding-top:6px; margin-top:2px;">
+          <span>연 예상 세부담 합계</span><span>${fmtWonFull(total)}</span>
+        </div>
+      `;
+    }
   }
 
   function renderSummaryFromResponse(resp) {
@@ -2925,12 +3153,14 @@
       return;
     }
     const data = await res.json();
+    lastV2Data = data;
     renderV2WowBanner(data);
     renderV2Diagnosis(data);
     renderV2Opportunities(data);
     renderV2ScenarioCards(data);
     renderV2Simulator(data);
     renderV2History(data);
+    renderTsOppSummary(data);
   }
 
   // "샘플 데이터로 체험하기" 성격: 백엔드의 6개월치 샘플(성수한식당)을 그대로 가져와
@@ -2941,12 +3171,14 @@
     if (!res.ok) return;
     const data = await res.json();
     v2LastMonthly = data.monthly;
+    lastV2Data = data;
     renderV2WowBanner(data);
     renderV2Diagnosis(data);
     renderV2Opportunities(data);
     renderV2ScenarioCards(data);
     renderV2Simulator(data);
     renderV2History(data);
+    renderTsOppSummary(data);
   }
 
   function renderV2History(data) {
