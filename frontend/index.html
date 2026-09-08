@@ -159,6 +159,9 @@
     .cta-row{ display:flex; gap: 10px; flex-wrap:wrap; align-items:center; margin: 0 0 16px; }
     .subnote{ display:flex; gap: 8px; align-items:center; color: rgba(11,18,32,.56); font-size: 13.5px; font-weight: 600; }
     .subnote .ic{ width: 18px; height: 18px; border-radius: 999px; background: rgba(22,163,74,.12); display:grid; place-items:center; flex: 0 0 auto; }
+    .subnote-link{ color: rgba(11,18,32,.68); text-decoration: underline; text-underline-offset: 2px; }
+    .subnote-link:hover{ color: var(--text); }
+    .ai-caption{ margin: 14px 4px 0; font-size: 12.5px; color: var(--muted); text-align:center; line-height:1.6; }
 
     /* ---------- Hero visual ---------- */
     .hero-visual{ position:relative; padding: 0; }
@@ -397,16 +400,16 @@
       <div class="container">
         <div class="hero-grid">
           <div class="reveal">
-            <span class="eyebrow-line">세금 계산 · 업종 비교 · 위험 진단</span>
-            <h1>매출은 나오는데,<br/><span style="color:var(--primary);">왜 돈이 안 남을까요?</span><br/>TS가 원인을 찾아드릴게요.</h1>
+            <span class="eyebrow-line">세금 · 경영 진단 · 절세 기회 탐색</span>
+            <h1>매출은 나오는데,<br/><span style="color:var(--primary);">왜 돈이 안 남을까요?</span><br/>TS가 원인부터 놓친 절세 기회, 다음 행동까지 찾아드립니다.</h1>
             <p class="lead">
-              월 매출·비용을 입력하면 예상 세금, 업종 평균 비교, 위험 진단은 물론
-              놓치고 있는 절세 기회와 다음 행동까지 한눈에 확인할 수 있어요.
+              월 매출·비용을 입력하면 경영 문제, 예상 세금, 놓친 절세 기회와
+              다음 행동을 한눈에 확인하세요.
             </p>
 
             <div class="cta-row">
               <button class="btn primary" id="btnStartHero" type="button">
-                무료로 시작하기
+                무료로 분석하기
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M9 18l6-6-6-6" stroke="rgba(255,255,255,.95)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
@@ -414,21 +417,18 @@
               <button class="btn outline" id="btnSampleHero" type="button">예시 결과 보기</button>
             </div>
 
-            <div class="cta-row" style="margin-top:10px;">
-              <button class="btn outline" id="btnGuestHero" type="button">로그인 없이 게스트로 접속하기</button>
-            </div>
-
             <div class="subnote">
               <span class="ic" aria-hidden="true">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="rgba(22,163,74,.95)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </span>
-              회원 가입 없이 바로 사용
+              <a href="javascript:void(0)" id="btnGuestHero" class="subnote-link">회원가입 없이 바로 체험하기</a>
             </div>
           </div>
 
           <!-- Visual -->
           <div class="hero-visual reveal" aria-label="예시 결과 미리보기">
             <img class="hero-illustration-img" src="./hero-illustration.png" alt="TS 대시보드 예시: 예상 세금 288,635원, 위험도 B, 신뢰도 74%, 업종 비교 상위 25%" />
+            <p class="ai-caption">TS AI는 계산 결과를 바탕으로 가장 중요한 문제와 기회를 우선순위화하고, 다음 행동을 제안합니다.</p>
           </div>
         </div>
       </div>
@@ -444,12 +444,12 @@
         <div class="row-4">
           <div class="show-card reveal">
             <div class="icon-img"><img src="./icon-problem-found.png" alt="" /></div>
-            <h3>문제 발견</h3>
+            <h3>문제 원인 발견</h3>
             <p>내 가게에서 무엇이 가장<br/>문제인지 찾아드립니다.</p>
           </div>
           <div class="show-card reveal">
             <div class="icon-img"><img src="./icon-tax-opportunity.png" alt="" /></div>
-            <h3>절세 기회 탐색</h3>
+            <h3>놓친 절세 기회</h3>
             <p>받을 수 있는 공제와<br/>절세 기회를 확인합니다.</p>
           </div>
           <div class="show-card reveal">
@@ -459,7 +459,7 @@
           </div>
           <div class="show-card reveal">
             <div class="icon-img"><img src="./icon-action-recommend.png" alt="" /></div>
-            <h3>지금 할 일 추천</h3>
+            <h3>다음 행동 추천</h3>
             <p>바로 실행할 수 있는<br/>행동을 알려드립니다.</p>
           </div>
         </div>
@@ -472,10 +472,10 @@
         <div class="cta-dark reveal">
           <div class="cta-dark-inner">
             <div>
-              <h2>매출은 나오는데<br/>왜 돈이 안 남을까요?</h2>
-              <p>TS가 원인을 찾아드릴게요.</p>
+              <h2>분석 결과를<br/>한눈에 확인하세요</h2>
+              <p>핵심 문제와 절세 기회, 지금 해야 할 행동을 한 화면에서 확인할 수 있습니다.</p>
               <button class="btn primary" id="btnAnalyzeNow" type="button">
-                지금 분석하기
+                예시 결과 보기
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 18l6-6-6-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </button>
               <div class="store-badges">
@@ -498,9 +498,9 @@
         <div class="section-head reveal">
           <span class="eyebrow">데이터 근거</span>
           <h2>신뢰할 수 있는 공공·공식 데이터로 분석합니다</h2>
-          <p style="margin-top:10px;">TS는 특정 기관과 제휴한 서비스가 아니라, 공개된 공식 세법·고시 자료와 업종 통계 기준으로 분석합니다.</p>
+          <p style="margin-top:10px;">국세청·공식 법령과 공개된 업종 통계 자료를 분석 기준으로 활용합니다. 아래 기관은 제휴사가 아닌 데이터 출처 예시입니다.</p>
         </div>
-        <div class="source-label reveal">분석 기준 예시</div>
+        <div class="source-label reveal">공개 데이터 출처 예시</div>
         <div class="logo-chip-row reveal">
           <img src="./logo-nts.png" alt="국세청" />
           <img src="./logo-shinhan.png" alt="신한카드" />
@@ -529,7 +529,7 @@
           <div class="process-step">
             <div class="process-num">2</div>
             <h3>자동 분석</h3>
-            <p>세금 계산, 업종 비교, 위험 진단,<br/>기회 탐색이 자동으로 진행돼요.</p>
+            <p>재무·세금 계산 후 AI가 핵심 문제와<br/>절세 기회를 분석합니다.</p>
           </div>
           <div class="process-arrow" aria-hidden="true">›</div>
           <div class="process-step">
@@ -547,10 +547,10 @@
         <div class="final-cta reveal">
           <img class="final-cta-icon" src="./icon-checklist-target.png" alt="" aria-hidden="true" />
           <div class="final-cta-text">
-            <h3>지금 바로, 내 가게의 문제와<br/>절세 기회를 무료로 확인해보세요</h3>
-            <p class="sub">엑셀 업로드 또는 간단 입력만으로 약 1분 안에 결과를 확인할 수 있어요.</p>
+            <h3>내 가게에서 새는 돈과<br/>놓치고 있는 절세 기회를 확인해보세요</h3>
+            <p class="sub">엑셀 업로드 또는 간단 입력만으로 약 1분 안에 분석 결과를 확인할 수 있어요.</p>
             <button class="btn primary" id="btnStartBottom" type="button">
-              무료로 시작하기
+              무료로 분석하기
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 18l6-6-6-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
             <div class="fine">회원 가입 없이 · 1분이면 충분해요</div>
@@ -599,7 +599,14 @@
               어떤 업종을 지원하나요?
               <span class="chev" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="rgba(11,18,32,.80)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
             </summary>
-            <p>현재는 <b>음식점 업종을 우선 지원</b>하며, 장차 다른 업종으로 확대해 나갈 예정입니다.</p>
+            <p>현재 <b>음식점 업종 분석을 우선 지원</b>하며, 지원 업종을 순차적으로 확대할 예정입니다.</p>
+          </details>
+          <details>
+            <summary>
+              TS의 절세 추천을 그대로 실행해도 되나요?
+              <span class="chev" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="rgba(11,18,32,.80)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </summary>
+            <p>TS는 입력된 정보를 기준으로 <b>예상 효과를 분석하는 참고용 서비스</b>입니다. 실제 신고 및 세무 의사결정 전에는 최신 법령과 전문가 확인이 필요합니다.</p>
           </details>
         </div>
       </div>
@@ -664,12 +671,14 @@
       document.querySelector(".hero-visual")?.scrollIntoView({ behavior: "smooth", block: "center" });
     }
 
-    ["#btnStartHero","#btnStartBottom","#btnAnalyzeNow"].forEach(id=>{
+    ["#btnStartHero","#btnStartBottom"].forEach(id=>{
       const el = $(id);
       if (el) el.addEventListener("click", goStart);
     });
-    const btnSample = $("#btnSampleHero");
-    if (btnSample) btnSample.addEventListener("click", goSample);
+    ["#btnSampleHero","#btnAnalyzeNow"].forEach(id=>{
+      const el = $(id);
+      if (el) el.addEventListener("click", goSample);
+    });
     const btnGuest = $("#btnGuestHero");
     if (btnGuest) btnGuest.addEventListener("click", goGuest);
 
