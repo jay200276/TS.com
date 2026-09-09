@@ -1619,12 +1619,12 @@
 
         <div class="card">
           <div class="field">
-            <div class="label">월 / 지역 / 업종</div>
+            <div class="label" style="display:flex;align-items:center;gap:6px;"><img src="./icon-input-store.png" alt="" style="width:16px;height:16px;object-fit:contain;" />월 / 지역 / 업종</div>
             <div class="row">
               <div class="control month-control">
                 <input id="inpMonth" type="month" class="hidden" />
                 <input id="inpMonthDisplay" type="text" placeholder="----년 --월" readonly />
-                <button id="btnMonthToday" class="iconbtn" type="button" title="월 선택">📅</button>
+                <button id="btnMonthToday" class="iconbtn" type="button" title="월 선택"><img src="./icon-input-calendar.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" /></button>
                 <div id="monthPopover" class="month-popover hidden">
                   <div class="month-popover-head">
                     <button id="btnMonthPrevYear" class="month-nav-btn" type="button" aria-label="이전 연도">‹</button>
@@ -1701,7 +1701,7 @@
 
           <div class="quick-core-grid">
             <div class="field">
-              <div class="label">월 매출 (부가세 포함)</div>
+              <div class="label" style="display:flex;align-items:center;gap:6px;"><img src="./icon-input-coins.png" alt="" style="width:16px;height:16px;object-fit:contain;" />월 매출 (부가세 포함)</div>
               <div class="money-line">
                 <div class="money-input">
                   <input id="inpSales" inputmode="numeric" placeholder="0" />
@@ -1716,7 +1716,7 @@
             </div>
 
             <div class="field">
-              <div class="label">월 비용(총합) (부가세 포함)</div>
+              <div class="label" style="display:flex;align-items:center;gap:6px;"><img src="./icon-input-wallet.png" alt="" style="width:16px;height:16px;object-fit:contain;" />월 비용(총합) (부가세 포함)</div>
               <div class="money-line">
                 <div class="money-input">
                   <input id="inpCostTotal" inputmode="numeric" placeholder="0" />
@@ -1734,7 +1734,7 @@
 
           <div class="quick-core-grid">
             <div class="field">
-              <div class="label">월 인건비</div>
+              <div class="label" style="display:flex;align-items:center;gap:6px;"><img src="./icon-input-people.png" alt="" style="width:16px;height:16px;object-fit:contain;" />월 인건비</div>
               <div class="money-line">
                 <div class="money-input">
                   <input id="inpLabor" inputmode="numeric" placeholder="0" />
@@ -1749,7 +1749,7 @@
             </div>
 
             <div class="field">
-              <div class="label">직원 수</div>
+              <div class="label" style="display:flex;align-items:center;gap:6px;"><img src="./icon-input-person.png" alt="" style="width:16px;height:16px;object-fit:contain;" />직원 수</div>
               <div class="control">
                 <input id="inpEmployees" inputmode="numeric" placeholder="직원 수 (없으면 0)" />
               </div>
@@ -1757,7 +1757,7 @@
           </div>
 
           <div class="field">
-            <div class="label">과세유형(추정)</div>
+            <div class="label" style="display:flex;align-items:center;gap:6px;"><img src="./icon-input-shieldcheck.png" alt="" style="width:16px;height:16px;object-fit:contain;" />과세유형(추정)</div>
             <div class="control">
               <select id="selTaxpayerGuess">
                 <option value="">자동 추정</option>
@@ -1770,7 +1770,7 @@
           <div class="precision-cta">
             <div class="actions" style="margin-top:0;">
               <button id="btnFillExample" class="btn ghost" type="button">예시값 채우기</button>
-              <button id="btnGoPro" class="btn" type="button">정밀 계산</button>
+              <button id="btnGoPro" class="btn" type="button"><img src="./icon-input-badge.png" alt="" style="width:16px;height:16px;object-fit:contain;vertical-align:-3px;margin-right:4px;" />정밀 계산</button>
               <button id="btnRun" class="btn primary" type="button">계산 실행</button>
             </div>
           </div>
@@ -1780,21 +1780,25 @@
 
             <div class="wizard-progress">
               <div class="wizard-step-chip active" data-step-chip="1">
+                <img src="./icon-input-chart.png" alt="" style="width:22px;height:22px;object-fit:contain;margin-bottom:4px;" />
                 <div class="wizard-step-no">STEP 1</div>
                 <div class="wizard-step-title">비용 분해</div>
                 <div class="wizard-step-desc">재료비 · 임대료 · 기타비용</div>
               </div>
               <div class="wizard-step-chip" data-step-chip="2">
+                <img src="./icon-input-document.png" alt="" style="width:22px;height:22px;object-fit:contain;margin-bottom:4px;" />
                 <div class="wizard-step-no">STEP 2</div>
                 <div class="wizard-step-title">매입 증빙</div>
                 <div class="wizard-step-desc">세금계산서 · 카드 · 현금영수증</div>
               </div>
               <div class="wizard-step-chip" data-step-chip="3">
+                <img src="./icon-input-location.png" alt="" style="width:22px;height:22px;object-fit:contain;margin-bottom:4px;" />
                 <div class="wizard-step-no">STEP 3</div>
                 <div class="wizard-step-title">추가 정보</div>
                 <div class="wizard-step-desc">면세 농산물 · 전년도 매출 · 급여</div>
               </div>
               <div class="wizard-step-chip" data-step-chip="4">
+                <img src="./icon-input-shieldpurple.png" alt="" style="width:22px;height:22px;object-fit:contain;margin-bottom:4px;" />
                 <div class="wizard-step-no">STEP 4</div>
                 <div class="wizard-step-title">검토 후 실행</div>
                 <div class="wizard-step-desc">입력 요약 확인 후 정밀 계산</div>
