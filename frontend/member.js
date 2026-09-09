@@ -24,8 +24,6 @@
   let financialChart = null;
   let historyTrendChart = null;
   let taxDonutChart = null;
-  let dashTrendChart = null;
-  let dashCostChart = null;
   let reportTrendChart = null;
   let reportTrendMetric = "sales";
   let lastResponse = null;
@@ -1258,8 +1256,7 @@
       shell.innerHTML = `
         <div class="ts-dash-main" id="tsDashMain">
           <nav class="ts-dash-nav">
-            <a class="ts-dash-nav-item active" href="#" data-dash-nav="home"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11.5L12 4l8 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-5h4v5h3a1 1 0 0 0 1-1v-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>대시보드</a>
-            <a class="ts-dash-nav-item" href="#" data-dash-nav="analysis"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="12" width="4" height="8" stroke="currentColor" stroke-width="1.8"/><rect x="10" y="7" width="4" height="13" stroke="currentColor" stroke-width="1.8"/><rect x="16" y="3" width="4" height="17" stroke="currentColor" stroke-width="1.8"/></svg>절감 분석</a>
+            <a class="ts-dash-nav-item active" href="#" data-dash-nav="home"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11.5L12 4l8 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-5h4v5h3a1 1 0 0 0 1-1v-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>결과 분석</a>
             <a class="ts-dash-nav-item" href="#" data-dash-nav="ledger"><svg viewBox="0 0 24 24" fill="none"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H18a1 1 0 0 1 1 1v15.5a1 1 0 0 1-1 1H6.5A1.5 1.5 0 0 1 5 19V4.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M5 17.5A1.5 1.5 0 0 1 6.5 16H19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>장부 관리</a>
             <a class="ts-dash-nav-item" href="#" data-dash-nav="tax"><svg viewBox="0 0 24 24" fill="none"><path d="M6 3h9l3 3v15H6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12h6M9 16h6M9 8h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>세금 신고</a>
             <a class="ts-dash-nav-item" href="#" data-dash-nav="save"><svg viewBox="0 0 24 24" fill="none"><path d="M9 18h6M10 21h4M8 14.5A5 5 0 1 1 16 14.5c-.6.9-1.4 1.6-1.6 2.5H9.6c-.2-.9-1-1.6-1.6-2.5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>절세 도우미</a>
@@ -1280,74 +1277,47 @@
                 <div class="ts-home-alert-title" id="dashHomeAlertTitle">-</div>
                 <div class="ts-home-alert-detail" id="dashHomeAlertDetail">-</div>
                 <div class="ts-home-alert-actions">
-                  <button class="ts-home-alert-btn solid" type="button" data-dash-nav="analysis">상세 분석 보기 →</button>
+                  <button class="ts-home-alert-btn solid" type="button" id="dashHomeAlertBtn">핵심 진단 보기 →</button>
                 </div>
               </div>
             </div>
 
-            <div class="ts-dash-two-col">
-              <div class="report-card">
-                <h3>매출 추이 · 최근 6개월</h3>
-                <div style="height:220px;position:relative;"><canvas id="dashTrendCanvas"></canvas></div>
-              </div>
-              <div class="report-card">
-                <h3>비용 구조 · 이번 달</h3>
-                <div style="height:150px;position:relative;"><canvas id="dashCostCanvas"></canvas></div>
-                <div id="dashCostLegend" class="ts-dash-donut-legend"></div>
-              </div>
+            <div class="report-card" id="dashCoreDiagCard">
+              <h3>핵심 진단</h3>
+              <div id="dashCoreDiagBody"></div>
+              <details class="ts-dash-details">
+                <summary>상세 Benchmark 보기</summary>
+                <div class="ts-dash-details-body" id="dashBenchDetailBody"></div>
+              </details>
             </div>
 
             <div class="report-card">
-              <h3>AI 핵심 진단</h3>
-              <div id="dashAiDiagBody" class="ts-home-diag-row"></div>
+              <h3>💡 TS가 찾은 기회</h3>
+              <div id="dashOppTeaser"></div>
             </div>
 
             <div class="report-card">
-              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-                <h3 style="margin:0;">TS가 찾은 기회</h3>
-                <button class="ts-home-alert-btn" type="button" data-dash-nav="analysis" style="border-color:var(--line); color:rgba(11,18,32,.62);">전체 보기 →</button>
-              </div>
-              <div id="dashOppList" class="ts-home-opp-row"></div>
+              <h3>바꾸면 얼마나 달라질까요?</h3>
+              <div id="dashSimTeaser"></div>
+            </div>
+
+            <div class="report-card">
+              <h3>이번 주 할 일</h3>
+              <div id="dashTodoTop" class="ts-tax-ba-note" style="margin-bottom:10px;"></div>
+              <div id="dashTodoList"></div>
             </div>
 
             <div class="ts-dash-two-col">
-              <div class="report-card">
-                <h3>이번 주 할 일</h3>
-                <div id="dashTodoList"></div>
-              </div>
               <div class="report-card">
                 <h3>예상 세금</h3>
                 <div id="dashTaxSummary"></div>
+                <button class="ts-ledger-side-link" type="button" id="dashBtnGoTax" style="margin-top:12px;">세금 신고에서 자세히 보기 →</button>
+              </div>
+              <div class="report-card">
+                <h3>데이터 완성도</h3>
+                <div id="dashCompletenessBody"></div>
               </div>
             </div>
-
-            <div class="report-card">
-              <h3>최근 분석 기록</h3>
-              <div style="overflow-x:auto;">
-                <table class="ts-home-hist-table">
-                  <thead><tr><th>기준월</th><th>주요 결과</th><th>상태</th></tr></thead>
-                  <tbody id="dashHistoryBody"><tr><td colspan="3" class="empty-note">계산 후 표시됩니다.</td></tr></tbody>
-                </table>
-              </div>
-            </div>
-
-            <div class="report-card ts-home-cta">
-              <div class="ts-home-cta-ic"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
-              <div class="ts-home-cta-text">
-                <div class="t">더 정확한 분석을 위해 추가 정보를 입력해보세요</div>
-              </div>
-              <button class="ts-home-cta-btn" type="button" id="dashBtnMoreInfo">추가 정보 입력하기 →</button>
-            </div>
-          </div>
-
-          <div id="dashAnalysisView" class="hidden">
-            <div class="ts-dash-header">
-              <div><h2>이번 달 TS 진단</h2><p>데이터로 확인하는 우리 매장의 개선 기회입니다.</p></div>
-              <div id="tsDashDate" class="ts-dash-date-badge">-</div>
-            </div>
-            <div id="tsDashKpiRow" class="ts-dash-kpi-grid"></div>
-            <div class="ts-dash-two-col" id="tsDashRow1"></div>
-            <div class="ts-dash-two-col" id="tsDashRow2"></div>
           </div>
 
           <div id="dashLedgerView" class="hidden">
@@ -1587,55 +1557,19 @@
       panelResult.insertBefore(shell, panelResult.firstElementChild);
 
       const main = $("tsDashMain");
-      const analysisView = $("dashAnalysisView");
       const homeView = $("dashHomeView");
-      const kpiRow = $("tsDashKpiRow");
-      const row1 = $("tsDashRow1");
-      const row2 = $("tsDashRow2");
 
-      const banner = $("riskBanner");
-      if (banner) analysisView.insertBefore(banner, kpiRow);
+      const benchCardEl = document.querySelector(".benchmark-card");
+      const benchDetailBody = $("dashBenchDetailBody");
+      if (benchDetailBody && benchCardEl) benchDetailBody.appendChild(benchCardEl);
 
-      const chartSectionEl = $("chartSection");
-      const oppSummaryCard = document.createElement("div");
-      oppSummaryCard.id = "tsDashOppSummary";
-      oppSummaryCard.className = "report-card";
-      if (chartSectionEl) row1.appendChild(chartSectionEl);
-      row1.appendChild(oppSummaryCard);
-
-      const simCard = $("tsSimCard");
-      if (simCard) analysisView.insertBefore(simCard, row2);
-
-      const actionsCard = reportActions?.closest(".report-card");
-      if (actionsCard) row2.appendChild(actionsCard);
-
-      const donutCard = document.createElement("div");
-      donutCard.className = "report-card";
-      donutCard.innerHTML = `
-        <h3>예상 세금 구성</h3>
-        <div style="height:180px;position:relative;"><canvas id="taxDonutCanvas"></canvas></div>
-        <div id="taxDonutLegend" class="ts-dash-donut-legend"></div>
-      `;
-      row2.appendChild(donutCard);
-
-      const histCard = $("historySection");
-      if (histCard) analysisView.appendChild(histCard);
-
-      const details = document.createElement("details");
-      details.id = "tsDashDetails";
-      details.className = "ts-dash-details";
-      const summary = document.createElement("summary");
-      summary.textContent = "상세 리포트 더 보기";
-      details.appendChild(summary);
-      const detailsBody = document.createElement("div");
-      detailsBody.className = "ts-dash-details-body";
-      details.appendChild(detailsBody);
-
+      const legacyBucket = document.createElement("div");
+      legacyBucket.id = "tsLegacyHidden";
+      legacyBucket.style.display = "none";
       Array.from(panelResult.children)
-        .filter((el) => el !== shell && el !== details)
-        .forEach((el) => detailsBody.appendChild(el));
-
-      panelResult.appendChild(details);
+        .filter((el) => el !== shell && el !== legacyBucket)
+        .forEach((el) => legacyBucket.appendChild(el));
+      panelResult.appendChild(legacyBucket);
 
       const ledgerView = $("dashLedgerView");
       const taxView = $("dashTaxView");
@@ -1647,7 +1581,6 @@
           if (el.tagName === "A") el.classList.toggle("active", el.getAttribute("data-dash-nav") === which);
         });
         homeView.classList.toggle("hidden", which !== "home");
-        analysisView.classList.toggle("hidden", which !== "analysis");
         ledgerView.classList.toggle("hidden", which !== "ledger");
         taxView.classList.toggle("hidden", which !== "tax");
         saveView.classList.toggle("hidden", which !== "save");
@@ -1674,13 +1607,10 @@
         });
       });
 
-      const btnMoreInfo = $("dashBtnMoreInfo");
-      if (btnMoreInfo) {
-        btnMoreInfo.addEventListener("click", () => {
-          setTab("input");
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        });
-      }
+      $("dashHomeAlertBtn")?.addEventListener("click", () => {
+        $("dashCoreDiagCard")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      $("dashBtnGoTax")?.addEventListener("click", () => goDashNav("tax"));
     }
   }
 
@@ -3254,13 +3184,125 @@
     const analysis = lastResponse?.analysis || null;
     renderDashHomeSummary(analysis);
     renderDashHomeAlert(analysis);
-    renderDashTrendChart();
-    renderDashCostChart();
-    renderDashAiDiag(analysis);
-    renderDashOpportunities(analysis);
+    renderDashCoreDiag(analysis);
+    renderDashOppTeaser(lastV2Data);
+    renderDashSimTeaser(lastV2Data);
     renderDashTodo(analysis);
     renderDashTaxSummary(analysis);
-    renderDashHistory();
+    renderDashCompleteness(lastV2Data);
+  }
+
+  function renderDashCoreDiag(analysis) {
+    const box = $("dashCoreDiagBody");
+    if (!box) return;
+
+    const items = Array.isArray(analysis?.benchmarks?.items) ? analysis.benchmarks.items : [];
+    const core = ["LABOR_RATIO", "MATERIAL_RATIO", "PROFIT_RATIO"]
+      .map((m) => items.find((x) => String(x?.metric) === m))
+      .filter(Boolean);
+
+    if (core.length === 0) {
+      box.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
+      return;
+    }
+
+    const worst = [...core]
+      .filter((x) => ["RISK", "WARN"].includes(String(x?.level).toUpperCase()))
+      .sort((a, b) => Math.abs(Number(b?.diff_pp || 0)) - Math.abs(Number(a?.diff_pp || 0)))[0];
+
+    const dotFor = (level) => {
+      const v = String(level || "").toUpperCase();
+      if (v === "RISK") return "🔴";
+      if (v === "WARN") return "🟡";
+      if (v === "GOOD") return "🟢";
+      return "⚪";
+    };
+
+    box.innerHTML = core.map((it) => `
+      <div class="ts-corediag-item">
+        <div class="ts-corediag-top"><span class="dot">${dotFor(it.level)}</span><span class="label">${escapeHtml(metricLabel(it.metric))}</span></div>
+        <div class="ts-corediag-value">${ratioToPercent(it.my_value)}</div>
+        <div class="ts-corediag-sub">업종 평균 ${ratioToPercent(it.p50)} · ${ppText(it.diff_pp)}</div>
+        ${it === worst ? `<div class="ts-corediag-note">현재 가장 먼저 개선해야 할 항목입니다.</div>` : ""}
+      </div>
+    `).join("");
+  }
+
+  function renderDashOppTeaser(data) {
+    const box = $("dashOppTeaser");
+    if (!box) return;
+
+    const opps = (Array.isArray(data?.opportunities) ? data.opportunities : [])
+      .filter((o) => o.category === "절세 기회" && o.eligible);
+
+    if (opps.length === 0) {
+      box.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
+      return;
+    }
+
+    const total = opps.reduce((s, o) => s + (o.expected_credit || 0), 0);
+    const top = [...opps].sort((a, b) => (b.expected_credit || 0) - (a.expected_credit || 0))[0];
+
+    box.innerHTML = `
+      <div class="ts-opp-teaser-main"><span class="cnt">절세 기회 ${opps.length}건</span><span class="amt">최대 ${fmtWonFull(total)}</span></div>
+      <div class="ts-opp-teaser-top">가장 큰 기회: ${escapeHtml(top?.title || "")}</div>
+      <button class="ts-ledger-side-link" type="button" id="dashBtnGoSave">절세 도우미에서 확인 →</button>
+    `;
+    $("dashBtnGoSave")?.addEventListener("click", () => goDashNav("save"));
+  }
+
+  function renderDashSimTeaser(data) {
+    const box = $("dashSimTeaser");
+    if (!box) return;
+
+    const rec = data?.scenarios?.recommended;
+    if (!rec) {
+      box.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
+      return;
+    }
+
+    box.innerHTML = `
+      <div class="ts-report-sim-base">${escapeHtml(rec.label)}</div>
+      <div class="ts-tax-ba">
+        <div class="ts-tax-ba-col"><div class="l">현재 영업이익</div><div class="v">${fmtWonFull(rec.base_profit)}</div></div>
+        <div class="ts-tax-ba-arrow">→</div>
+        <div class="ts-tax-ba-col after"><div class="l">예상 영업이익</div><div class="v">${fmtWonFull(rec.new_profit)}</div></div>
+      </div>
+      <div class="ts-tax-ba-note">+${fmtWonFull(rec.profit_delta)} · 세 방안 중 순이익 개선 효과가 가장 큽니다.</div>
+      <button class="ts-ledger-side-link" type="button" id="dashBtnGoReport">더 많은 시나리오 보기 → 경영 리포트</button>
+    `;
+    $("dashBtnGoReport")?.addEventListener("click", () => goDashNav("report"));
+  }
+
+  function renderDashCompleteness(data) {
+    const box = $("dashCompletenessBody");
+    if (!box) return;
+
+    const dc = data?.data_completeness;
+    if (!dc) {
+      box.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
+      return;
+    }
+
+    const failures = Array.isArray(lastResponse?.meta?.partial_failures) ? lastResponse.meta.partial_failures : [];
+
+    box.innerHTML = `
+      <div class="ts-completeness-top"><span class="pct">${dc.pct}%</span><span class="lbl">${dc.filled}/${dc.total}개 입력 완료</span></div>
+      ${dc.missing_note ? `<div class="ts-completeness-note">${escapeHtml(dc.missing_note)}</div>` : ""}
+      <button class="ts-ledger-quick-btn primary" type="button" id="dashBtnAddInfo">+ 정보 입력하기</button>
+      ${failures.length ? `
+        <details class="ts-dash-details" style="margin-top:12px;">
+          <summary>분석 기준 및 가정 보기</summary>
+          <div class="ts-dash-details-body">
+            ${failures.map((f) => `<div class="ts-report-good-item">${escapeHtml(f.message || "-")}</div>`).join("")}
+          </div>
+        </details>
+      ` : ""}
+    `;
+    $("dashBtnAddInfo")?.addEventListener("click", () => {
+      setTab("input");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
   }
 
   function renderDashHomeSummary(analysis) {
@@ -3358,183 +3400,6 @@
     box.classList.remove("hidden");
   }
 
-  function renderDashTrendChart() {
-    const canvas = $("dashTrendCanvas");
-    if (!canvas || typeof Chart === "undefined") return;
-    const monthly = Array.isArray(v2LastMonthly) ? v2LastMonthly : [];
-    if (dashTrendChart) { dashTrendChart.destroy(); dashTrendChart = null; }
-    if (monthly.length === 0) return;
-
-    dashTrendChart = new Chart(canvas, {
-      type: "line",
-      data: {
-        labels: monthly.map((m) => m.month),
-        datasets: [
-          {
-            label: "매출",
-            data: monthly.map((m) => m.sales),
-            borderColor: "#1A6DFF",
-            backgroundColor: "rgba(26,109,255,.10)",
-            fill: true,
-            tension: 0.35,
-            pointRadius: 3,
-          },
-          {
-            label: "영업이익",
-            data: monthly.map((m) => m.profit),
-            borderColor: "#16a34a",
-            backgroundColor: "rgba(22,163,74,.08)",
-            fill: true,
-            tension: 0.35,
-            pointRadius: 3,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { position: "top", labels: { boxWidth: 10, font: { size: 11 } } } },
-        scales: {
-          y: { ticks: { callback: (v) => (v / 10000) + "만" } },
-        },
-      },
-    });
-  }
-
-  function renderDashCostChart() {
-    const canvas = $("dashCostCanvas");
-    const legend = $("dashCostLegend");
-    if (!canvas || typeof Chart === "undefined") return;
-    const monthly = Array.isArray(v2LastMonthly) ? v2LastMonthly : [];
-    const cur = monthly[monthly.length - 1];
-
-    if (dashCostChart) { dashCostChart.destroy(); dashCostChart = null; }
-
-    if (!cur) {
-      if (legend) legend.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-      return;
-    }
-
-    const parts = [
-      { label: "인건비", value: safeNumber(cur.labor_cost), color: "#1A6DFF" },
-      { label: "재료비", value: safeNumber(cur.material_cost), color: "#FF6B6B" },
-      { label: "임차료", value: safeNumber(cur.rent), color: "#16a34a" },
-      { label: "기타비용", value: safeNumber(cur.other_cost), color: "#FFAB00" },
-    ].filter((p) => p.value > 0);
-
-    const total = parts.reduce((s, p) => s + p.value, 0);
-    if (total <= 0) {
-      if (legend) legend.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-      return;
-    }
-
-    dashCostChart = new Chart(canvas, {
-      type: "doughnut",
-      data: {
-        labels: parts.map((p) => p.label),
-        datasets: [{ data: parts.map((p) => p.value), backgroundColor: parts.map((p) => p.color), borderWidth: 0 }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        cutout: "62%",
-      },
-    });
-
-    if (legend) {
-      legend.innerHTML = parts.map((p) => `
-        <div class="ts-dash-donut-legend-row">
-          <span><span class="ts-dash-donut-legend-dot" style="background:${p.color}"></span>${escapeHtml(p.label)}</span>
-          <span>${Math.round((p.value / total) * 100)}%</span>
-        </div>
-      `).join("");
-    }
-  }
-
-  function renderDashAiDiag(analysis) {
-    const box = $("dashAiDiagBody");
-    if (!box) return;
-
-    const items = Array.isArray(analysis?.benchmarks?.items) ? analysis.benchmarks.items : [];
-    if (items.length === 0) {
-      box.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-      return;
-    }
-
-    const byBad = [...items].filter((x) => ["RISK", "WARN"].includes(String(x?.level).toUpperCase()))
-      .sort((a, b) => Math.abs(Number(b?.diff_pp || 0)) - Math.abs(Number(a?.diff_pp || 0)));
-    const byGood = [...items].filter((x) => String(x?.level).toUpperCase() === "GOOD")
-      .sort((a, b) => Math.abs(Number(b?.diff_pp || 0)) - Math.abs(Number(a?.diff_pp || 0)));
-
-    const problem = byBad[0];
-    const strength = byGood[0] || [...items].sort((a, b) => Math.abs(Number(a?.diff_pp || 0)) - Math.abs(Number(b?.diff_pp || 0)))[0];
-
-    const rows = [];
-    if (problem) {
-      rows.push(`
-        <div class="ts-home-diag-item">
-          <span class="ts-home-diag-tag problem">문제</span>
-          <span>${escapeHtml(metricLabel(problem.metric))}이 업종 평균보다 높습니다 (${ppText(problem.diff_pp)})</span>
-        </div>
-      `);
-    }
-    if (strength) {
-      const isGood = String(strength?.level).toUpperCase() === "GOOD";
-      rows.push(`
-        <div class="ts-home-diag-item">
-          <span class="ts-home-diag-tag strength">강점</span>
-          <span>${escapeHtml(metricLabel(strength.metric))}${isGood ? "은 업종 평균보다 양호합니다" : "은 업종 평균과 비슷한 수준입니다"}</span>
-        </div>
-      `);
-    }
-    box.innerHTML = rows.join("") || `<div class="empty-note">계산 후 표시됩니다.</div>`;
-  }
-
-  function renderDashOpportunities(analysis) {
-    const wrap = $("dashOppList");
-    if (!wrap) return;
-
-    const opps = Array.isArray(lastV2Data?.opportunities) ? lastV2Data.opportunities : [];
-    if (opps.length === 0 && !analysis) {
-      wrap.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-      return;
-    }
-
-    const taxSaveTotal = opps
-      .filter((o) => o.category === "절세 기회" && o.eligible)
-      .reduce((sum, o) => sum + (o.expected_credit || 0), 0);
-
-    const items = Array.isArray(analysis?.benchmarks?.items) ? analysis.benchmarks.items : [];
-    const annualRevenue = safeNumber(lastResponse?.result?.annualized?.revenue_vat_included || 0);
-    const overCostItem = items
-      .filter((x) => ["COST_RATIO", "LABOR_RATIO"].includes(String(x?.metric)) && Number(x?.diff_pp || 0) > 0)
-      .sort((a, b) => Number(b?.diff_pp || 0) - Number(a?.diff_pp || 0))[0];
-    const costSaveEstimate = (overCostItem && annualRevenue > 0)
-      ? Math.round(annualRevenue * (Number(overCostItem.diff_pp) / 100))
-      : 0;
-
-    const topAction = Array.isArray(analysis?.actions) ? analysis.actions[0] : null;
-
-    wrap.innerHTML = `
-      <div class="ts-home-opp-card blue">
-        <div class="ts-home-opp-label">절세 기회</div>
-        <div class="ts-home-opp-value">${taxSaveTotal > 0 ? `예상 ${fmtWonFull(taxSaveTotal)}` : "-"}</div>
-        <div class="ts-home-opp-note">놓치고 있는 세액공제예요.</div>
-      </div>
-      <div class="ts-home-opp-card amber">
-        <div class="ts-home-opp-label">비용 절감 기회</div>
-        <div class="ts-home-opp-value">${costSaveEstimate > 0 ? `연 ${fmtWonFull(costSaveEstimate)}` : "-"}</div>
-        <div class="ts-home-opp-note">${overCostItem ? escapeHtml(metricLabel(overCostItem.metric)) + " 조정 가능" : "현재 비용 구조는 안정적이에요."}</div>
-      </div>
-      <div class="ts-home-opp-card purple">
-        <div class="ts-home-opp-label">운영 개선 기회</div>
-        <div class="ts-home-opp-value">${topAction ? escapeHtml(topAction.title) : "-"}</div>
-        <div class="ts-home-opp-note">${topAction ? escapeHtml(topAction.why || "") : "계산 후 표시됩니다."}</div>
-      </div>
-    `;
-  }
-
   function getTodoCustom() {
     try { return JSON.parse(localStorage.getItem(LS_TODO_CUSTOM_KEY) || "[]"); } catch { return []; }
   }
@@ -3589,6 +3454,9 @@
       </div>
     `;
 
+    const topEl = $("dashTodoTop");
+    if (topEl) topEl.textContent = items[0] ? `가장 먼저: ${items[0].text}` : "";
+
     bindActionCheckboxes();
     bindDashTodoEvents();
   }
@@ -3641,54 +3509,11 @@
     if (!box) return;
 
     const tb = analysis?.tax_brief || {};
-    const vatMonth = safeNumber(tb?.vat?.due_month || 0);
-    const incomeYearCombined = safeNumber(tb?.income_tax?.due_year || 0);
-    const incomeMonthCombined = incomeYearCombined / 12;
-    const incomeMonth = incomeMonthCombined / 1.1;
-    const localMonth = incomeMonthCombined - incomeMonth;
-    const total = vatMonth + incomeMonth + localMonth;
+    const total = safeNumber(tb?.vat?.due_year || 0) + safeNumber(tb?.income_tax?.due_year || 0) + safeNumber(tb?.insurance?.employer_year || 0);
 
-    if (total <= 0) {
-      box.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-      return;
-    }
-
-    box.innerHTML = `
-      <div class="ts-home-tax-row"><span>부가가치세</span><span>${fmtWonFull(vatMonth)}</span></div>
-      <div class="ts-home-tax-row"><span>종합소득세</span><span>${fmtWonFull(incomeMonth)}</span></div>
-      <div class="ts-home-tax-row"><span>지방소득세</span><span>${fmtWonFull(localMonth)}</span></div>
-      <div class="ts-home-tax-row total"><span>이번 달 합계</span><span>${fmtWonFull(total)}</span></div>
-    `;
-  }
-
-  function renderDashHistory() {
-    const body = $("dashHistoryBody");
-    if (!body) return;
-
-    const monthly = Array.isArray(v2LastMonthly) ? v2LastMonthly : [];
-    if (monthly.length === 0) {
-      body.innerHTML = `<tr><td colspan="3" class="empty-note">계산 후 표시됩니다.</td></tr>`;
-      return;
-    }
-
-    const rows = [...monthly].reverse().slice(0, 3).map((m) => {
-      const laborRatio = safeNumber(m.labor_ratio);
-      const profitRatio = safeNumber(m.profit_ratio);
-      let summary;
-      if (laborRatio >= 0.30) summary = "인건비 구조 점검 필요";
-      else if (profitRatio < 0.05) summary = "수익성 개선 필요";
-      else if (profitRatio >= 0.10) summary = "안정적인 수익 구조";
-      else summary = "매출·비용 변동 미미";
-      return `
-        <tr>
-          <td>${escapeHtml(m.month)}</td>
-          <td>${escapeHtml(summary)}</td>
-          <td><span class="ts-home-hist-status">완료</span></td>
-        </tr>
-      `;
-    });
-
-    body.innerHTML = rows.join("");
+    box.innerHTML = total > 0
+      ? `<div class="ts-report-flow-row total"><span>연 예상 세부담</span><b>${fmtWonFull(total)}</b></div>`
+      : `<div class="empty-note">계산 후 표시됩니다.</div>`;
   }
 
   // ---------------------------------------------------------------------
