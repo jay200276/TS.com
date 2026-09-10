@@ -48,6 +48,20 @@
     return String(localStorage.getItem(LS_TOKEN_KEY) || "").trim();
   }
 
+  // Render 무료 플랜은 트래픽이 몰리면 연결이 끊기는 경우(ERR_CONNECTION_CLOSED 등)가 있어,
+  // HTTP 응답을 받기 전에 네트워크 단에서 실패하면 짧게 재시도한다. (HTTP 에러 상태는 재시도하지 않음)
+  async function fetchWithRetry(url, options, retries = 2, delayMs = 1000) {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await fetch(url, options);
+      } catch (e) {
+        if (attempt >= retries) throw e;
+        console.warn(`[TS] fetch failed (attempt ${attempt + 1}/${retries + 1}), retrying:`, e);
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+
   const UI_INDUSTRY_MAP = {
     "백반/한식": { industry_code: "5611", business_type_code: "FOOD_ALL", hometax_industry_code: "5611" },
     "찜·탕":     { industry_code: "5611", business_type_code: "FOOD_ALL", hometax_industry_code: "5611" },
@@ -3629,7 +3643,7 @@
       const headers = { "Content-Type": "application/json" };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      let res = await fetch(url, {
+      let res = await fetchWithRetry(url, {
         method: "POST",
         headers,
         body: JSON.stringify(payload),
@@ -3641,7 +3655,7 @@
         localStorage.removeItem(LS_TOKEN_KEY);
         token = "";
         url = `${base}/api/v1/calc/run-guest`;
-        res = await fetch(url, {
+        res = await fetchWithRetry(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -3708,7 +3722,7 @@
       }
     } catch (e) {
       console.error("[TS] runCalc fatal error:", e);
-      showError(`API 연결 실패: ${e?.message || e}`);
+      showError(`서버 연결이 불안정합니다. 잠시 후 다시 시도해주세요. (${e?.message || e})`);
     } finally {
       btnRun.disabled = false;
       if (btnRunPro) btnRunPro.disabled = false;
@@ -3789,7 +3803,7 @@
     v2LastMonthly = monthly;
 
     const base = getApiBase();
-    const res = await fetch(`${base}/api/v2/analyze`, {
+    const res = await fetchWithRetry(`${base}/api/v2/analyze`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ business_info, monthly }),
@@ -3809,7 +3823,7 @@
   // 폼에서 만든 단일월 데이터 대신 진짜 추이가 있는 결과로 덮어씌운다.
   async function runV2Sample() {
     const base = getApiBase();
-    const res = await fetch(`${base}/api/v2/sample`);
+    const res = await fetchWithRetry(`${base}/api/v2/sample`, {});
     if (!res.ok) {
       lastV2Data = null;
       renderDashboardHome();
