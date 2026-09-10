@@ -679,6 +679,27 @@ def _make_calc_response(req: CalcRequest, record_id: Optional[str]) -> CalcOrErr
     vat_due_month_value = _extract_vat_due_month(vat)
     vat_due_year_value = vat_due_month_value * 12
 
+    # 간이과세자 ↔ 일반과세자 전환 시뮬레이션: 실제 판정과 반대되는 과세유형이었다면
+    # 부가세가 어떻게 달라지는지 참고용으로 함께 계산 (meta는 분리해 본 계산에 영향 없게 함)
+    if taxpayer_type == "SIMPLE":
+        vat_alt = compute_vat_general(
+            taxable_sales_vat_included=monthly_sales_vat_included,
+            purchase_vat_included_total=(
+                purchase_total_vat_included if purchase_total_vat_included > 0 else int(req.cost_vat_included)
+            ),
+            exempt_agri_purchase_vat_exempt=exempt_agri_purchase,
+            annual_sales_vat_included=annual_sales_vat_included,
+            business_type_code=req.business_type_code,
+            is_corporate=is_corporate,
+        )
+        alt_taxpayer_type = "GENERAL"
+    else:
+        vat_alt = compute_vat_simple(
+            annual_sales_vat_included=annual_sales_vat_included,
+        )
+        alt_taxpayer_type = "SIMPLE"
+    vat_alt_due_month_value = _extract_vat_due_month(vat_alt)
+
     material_m = _safe_int(req.material_cost_vat_included)
     rent_m = _safe_int(req.rent_cost_vat_included)
     other_m = _safe_int(req.other_cost_vat_included)
@@ -1005,6 +1026,14 @@ def _make_calc_response(req: CalcRequest, record_id: Optional[str]) -> CalcOrErr
                     "mode": req.mode,
                     "taxpayer_type_guess": taxpayer_type,
                     "vat": vat,
+                    "taxpayer_type_simulation": {
+                        "current_type": taxpayer_type,
+                        "current_vat_due_month": int(vat_due_month_value),
+                        "current_vat_due_year": int(vat_due_year_value),
+                        "alt_type": alt_taxpayer_type,
+                        "alt_vat_due_month": int(vat_alt_due_month_value),
+                        "alt_vat_due_year": int(vat_alt_due_month_value) * 12,
+                    },
                     "income": {
                         "taxable_income_est": int(taxable_income_est),
                         "taxable_income_est_raw": int(taxable_income_est_raw),

@@ -1180,6 +1180,29 @@ def build_analysis_v1(
         items=bench_items,
     )
 
+    prior_year_sales = _safe_float(request_payload.get("prior_year_sales_vat_included"), None)
+    if prior_year_sales and prior_year_sales > 0 and revenue_annual > 0:
+        sales_growth_yoy = (revenue_annual - prior_year_sales) / prior_year_sales
+        if sales_growth_yoy >= 0.05:
+            yoy_level = "GOOD"
+        elif sales_growth_yoy >= -0.05:
+            yoy_level = "WARN"
+        else:
+            yoy_level = "RISK"
+        kpi_cards.append(
+            KpiCard(
+                code="SALES_GROWTH_YOY",
+                label=_metric_label("SALES_GROWTH_YOY"),
+                value=sales_growth_yoy,
+                unit="ratio",
+                level=yoy_level,
+                comment=(
+                    f"이번 달 매출을 연환산({_fmt_won(revenue_annual)})해 "
+                    f"직전연도 매출({_fmt_won(prior_year_sales)})과 비교한 추정치입니다."
+                ),
+            )
+        )
+
     return AnalysisV1(
         executive_summary=executive,
         kpi_cards=kpi_cards,

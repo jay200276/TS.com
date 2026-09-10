@@ -309,18 +309,6 @@
     }
     .chip:hover{background: rgba(26,109,255,.10)}
 
-    .info-strip{
-      margin-top:12px;
-      padding:12px 14px;
-      border-radius:14px;
-      background: rgba(26,109,255,.06);
-      border:1px solid rgba(26,109,255,.12);
-      color: rgba(11,18,32,.78);
-      font-size:12px;
-      font-weight:800;
-      line-height:1.5;
-    }
-
     .warn-strip{
       margin-top:12px;
       padding:12px 14px;
@@ -423,31 +411,6 @@
       font-weight:900;
     }
 
-    .insight-row{
-      margin-top:12px;
-      display:grid;
-      grid-template-columns: 240px 1fr;
-      gap:12px;
-    }
-    .insight-box{
-      background: rgba(255,255,255,.72);
-      border:1px solid var(--line);
-      border-radius: 18px;
-      padding:14px;
-      box-shadow: var(--shadow2);
-      min-height: 74px;
-    }
-    .insight-box .k{
-      font-size:12px; color: rgba(11,18,32,.62);
-      font-weight:800;
-      margin-bottom:8px;
-    }
-    .insight-box .v{
-      font-size:13px; color: rgba(11,18,32,.84);
-      font-weight:800;
-      line-height:1.35;
-    }
-
     .tag-area{
       margin-top:12px;
       background: rgba(255,255,255,.72);
@@ -460,9 +423,6 @@
       font-size:12px; color: rgba(11,18,32,.62);
       font-weight:900;
       margin-bottom:10px;
-    }
-    .tagline{
-      display:flex; gap:8px; flex-wrap:wrap;
     }
     .tag{
       background: var(--chip);
@@ -479,59 +439,6 @@
       font-size:12px;
       font-weight:800;
     }
-
-    .result-grid{
-      display:grid;
-      grid-template-columns: 1.2fr .8fr;
-      gap:12px;
-    }
-    .result-card{
-      background: rgba(255,255,255,.78);
-      border:1px solid var(--line);
-      border-radius: 18px;
-      padding:14px;
-      box-shadow: var(--shadow2);
-      min-height: 220px;
-    }
-    .result-card h3{
-      margin:0 0 10px;
-      font-size:14px;
-      font-weight:900;
-      letter-spacing:-0.2px;
-      color: rgba(11,18,32,.86);
-    }
-
-    .report-grid{
-      display:grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap:12px;
-      margin-bottom:12px;
-    }
-    .risk-banner{
-      display:flex; align-items:flex-start; gap:12px;
-      background: linear-gradient(135deg, rgba(239,68,68,.10), rgba(239,68,68,.04));
-      border:1px solid rgba(239,68,68,.24);
-      border-radius:16px;
-      padding:14px 16px;
-      margin-bottom:14px;
-    }
-    .risk-banner-icon{font-size:20px; line-height:1; flex:0 0 auto; display:flex;}
-    .risk-banner-icon img{ width:32px; height:32px; display:block; }
-    .risk-banner-title{font-size:14.5px; font-weight:900; color:#991b1b;}
-    .risk-banner-detail{font-size:13px; font-weight:700; color:rgba(153,27,27,.82); margin-top:3px;}
-    .action-grid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:12px;
-      margin-bottom:12px;
-    }
-    .action-stat-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
-    .action-stat-tile{border:1px solid rgba(15,23,42,.08); border-radius:16px; padding:14px 10px; text-align:center; background:rgba(255,255,255,.9);}
-    .action-stat-icon{width:34px; height:34px; margin:0 auto 8px; border-radius:12px; background:rgba(26,109,255,.10); display:grid; place-items:center; font-size:16px;}
-    .action-stat-value{font-size:18px; font-weight:900;}
-    .action-stat-label{font-size:11.5px; color:rgba(11,18,32,.58); font-weight:800; margin-top:2px;}
-    .top-action-card{border:1px solid rgba(15,23,42,.08); border-radius:16px; padding:14px; background:rgba(255,255,255,.92);}
-    .top-action-tag{display:inline-block; font-size:11px; font-weight:900; color:#1A6DFF; background:rgba(26,109,255,.10); border-radius:999px; padding:3px 9px; margin-right:6px;}
     .report-card{
       background: rgba(255,255,255,.78);
       border:1px solid var(--line);
@@ -547,38 +454,11 @@
       letter-spacing:-0.2px;
       color: rgba(11,18,32,.86);
     }
-
-    .kpi-grid{
-      display:grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap:12px;
-      margin-bottom:12px;
-    }
-    .kpi-card{
-      background: rgba(255,255,255,.78);
-      border:1px solid var(--line);
-      border-radius: 18px;
-      padding:14px;
-      box-shadow: var(--shadow2);
-      min-height: 126px;
-    }
-    .kpi-label{
-      font-size:12px;
-      font-weight:900;
-      color: rgba(11,18,32,.62);
-      margin-bottom:10px;
-    }
     .kpi-value{
       font-size:24px;
       font-weight:900;
       letter-spacing:-0.5px;
       margin-bottom:8px;
-    }
-    .kpi-comment{
-      font-size:12px;
-      line-height:1.4;
-      color: rgba(11,18,32,.68);
-      font-weight:700;
     }
 
     /* ---------- TS Dashboard (결과 분석 사이드바 레이아웃) ---------- */
@@ -608,35 +488,11 @@
       background:#fff; border:1px solid var(--line); border-radius:14px;
       padding:8px 16px; font-size:13px; font-weight:800; box-shadow: var(--shadow2);
     }
-    .ts-dash-kpi-grid{ display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; }
-    .ts-dash-kpi-card{
-      background: rgba(255,255,255,.85); border:1px solid var(--line);
-      border-radius: 18px; padding:16px; box-shadow: var(--shadow2);
-    }
-    .ts-dash-kpi-icon{ width:30px; height:30px; display:block; margin-bottom:10px; }
-    .ts-dash-kpi-label{ font-size:12.5px; font-weight:800; color:var(--muted); margin-bottom:8px; }
-    .ts-dash-kpi-value{ font-size:22px; font-weight:900; letter-spacing:-.5px; }
     .ts-dash-kpi-delta{ display:inline-block; margin-top:8px; font-size:11.5px; font-weight:900; padding:3px 8px; border-radius:999px; }
     .ts-dash-kpi-delta.good{ background: var(--good-bg); color: var(--good-text); }
     .ts-dash-kpi-delta.risk{ background: var(--risk-bg); color: var(--risk-text); }
     .ts-dash-two-col{ display:grid; grid-template-columns: 1.3fr 1fr; gap:14px; align-items:stretch; }
     .ts-dash-two-col > *{ min-width:0; }
-    .ts-opp-summary-row{ display:flex; flex-direction:column; gap:10px; }
-    .ts-opp-summary-card{ border-radius:16px; padding:14px 16px; display:flex; align-items:center; gap:12px; }
-    .ts-opp-summary-card.blue{ background: rgba(26,109,255,.08); border:1px solid rgba(26,109,255,.16); }
-    .ts-opp-summary-card.amber{ background: rgba(245,158,11,.10); border:1px solid rgba(245,158,11,.20); }
-    .ts-opp-summary-ic{ width:38px; height:38px; border-radius:12px; display:grid; place-items:center; font-size:17px; flex:0 0 auto; }
-    .ts-opp-summary-ic img{ width:22px; height:22px; object-fit:contain; }
-    .ts-opp-summary-card.blue .ts-opp-summary-ic{ background: rgba(26,109,255,.16); color:#0D3EDB; }
-    .ts-opp-summary-card.amber .ts-opp-summary-ic{ background: rgba(245,158,11,.22); color:#92400e; }
-    .ts-opp-summary-label{ font-size:12.5px; font-weight:800; color: rgba(11,18,32,.62); }
-    .ts-opp-summary-value{ font-size:17px; font-weight:900; margin-top:2px; }
-    .ts-opp-summary-value.blue{ color:#0D3EDB; }
-    .ts-opp-summary-value.amber{ color:#92400e; }
-    .ts-opp-summary-note{ font-size:11px; color:var(--muted); font-weight:700; margin-top:2px; }
-    .ts-dash-donut-legend{ display:flex; flex-direction:column; gap:6px; margin-top:10px; }
-    .ts-dash-donut-legend-row{ display:flex; align-items:center; justify-content:space-between; font-size:12px; font-weight:700; }
-    .ts-dash-donut-legend-dot{ width:9px; height:9px; border-radius:50%; display:inline-block; margin-right:6px; }
     .ts-dash-details{ margin-top:4px; }
     .ts-dash-details > summary{ cursor:pointer; font-size:13px; font-weight:800; color: rgba(11,18,32,.58); padding:10px 4px; list-style:none; }
     .ts-dash-details > summary::-webkit-details-marker{ display:none; }
@@ -644,7 +500,6 @@
     .ts-dash-details-body > *{ margin-bottom:12px; }
     @media (max-width:980px){
       .ts-dash-two-col{ grid-template-columns:1fr; }
-      .ts-dash-kpi-grid{ grid-template-columns: repeat(2,1fr); }
     }
 
     /* ---------- Dashboard Home (대시보드 첫 화면) ---------- */
@@ -671,6 +526,18 @@
     .ts-home-kpi-sub.down{ color: var(--risk-text); }
     .ts-home-kpi-sub.flat{ color: var(--muted); }
 
+    .ts-alert-settings{
+      display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+      font-size:12px; font-weight:700; color: rgba(11,18,32,.6);
+      margin-bottom:10px;
+    }
+    .ts-alert-settings b{ color: rgba(11,18,32,.8); }
+    .ts-alert-settings input{
+      border:1px solid var(--line); border-radius:8px; padding:5px 8px;
+      font-size:12px; font-weight:700; box-sizing:border-box;
+    }
+    .ts-alert-settings input:focus{ outline:none; border-color: var(--primary); }
+
     .ts-home-alert{
       display:flex; align-items:flex-start; gap:14px;
       background: linear-gradient(135deg, rgba(239,68,68,.09), rgba(239,68,68,.03));
@@ -687,25 +554,7 @@
       font-size:12.5px; font-weight:900; padding:8px 14px; border-radius:999px; cursor:pointer;
     }
     .ts-home-alert-btn.solid{ background:#991b1b; color:#fff; border-color:#991b1b; }
-
-    .ts-home-diag-row{ display:flex; flex-direction:column; gap:10px; }
-    .ts-home-diag-item{ display:flex; align-items:flex-start; gap:10px; font-size:13px; font-weight:700; line-height:1.5; }
-    .ts-home-diag-tag{ flex:0 0 auto; font-size:11px; font-weight:900; padding:3px 9px; border-radius:999px; margin-top:1px; }
-    .ts-home-diag-tag.problem{ background: var(--risk-bg); color: var(--risk-text); }
-    .ts-home-diag-tag.strength{ background: var(--good-bg); color: var(--good-text); }
-
-    .ts-home-opp-row{ display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; }
-    @media (max-width:820px){ .ts-home-opp-row{ grid-template-columns:1fr; } }
-    .ts-home-opp-card{ border-radius:16px; padding:14px 16px; }
-    .ts-home-opp-card.blue{ background: rgba(26,109,255,.08); border:1px solid rgba(26,109,255,.16); }
-    .ts-home-opp-card.amber{ background: rgba(245,158,11,.10); border:1px solid rgba(245,158,11,.20); }
-    .ts-home-opp-card.purple{ background: rgba(139,92,246,.09); border:1px solid rgba(139,92,246,.18); }
-    .ts-home-opp-label{ font-size:12px; font-weight:800; color:rgba(11,18,32,.6); margin-bottom:6px; }
-    .ts-home-opp-value{ font-size:16.5px; font-weight:900; margin-bottom:4px; }
-    .ts-home-opp-card.blue .ts-home-opp-value{ color:#0D3EDB; }
-    .ts-home-opp-card.amber .ts-home-opp-value{ color:#92400e; }
-    .ts-home-opp-card.purple .ts-home-opp-value{ color:#5b21b6; }
-    .ts-home-opp-note{ font-size:11.5px; color:rgba(11,18,32,.6); font-weight:700; line-height:1.5; }
+    
 
     .ts-home-todo-item{ display:flex; align-items:center; gap:10px; padding:9px 0; font-size:13px; font-weight:700; border-top:1px dashed var(--line); }
     .ts-home-todo-item:first-child{ border-top:none; }
@@ -726,50 +575,47 @@
     }
     .ts-home-todo-add input:focus{ outline:none; border-color: var(--primary); border-style:solid; }
 
-    .ts-home-tax-row{ display:flex; align-items:center; justify-content:space-between; padding:8px 0; font-size:13px; font-weight:700; border-top:1px dashed var(--line); }
-    .ts-home-tax-row:first-child{ border-top:none; }
-    .ts-home-tax-row.total{ margin-top:4px; padding-top:12px; border-top:1px solid var(--line); font-weight:900; font-size:14px; }
-    .ts-home-tax-btn{
-      display:block; width:100%; margin-top:12px; text-align:center;
-      background: linear-gradient(135deg,var(--primary),var(--primary2)); color:#fff;
-      font-size:12.5px; font-weight:900; padding:10px; border-radius:12px; border:none; cursor:pointer;
-    }
-
     .ts-home-hist-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
     .ts-home-hist-table th{ text-align:left; font-weight:800; color:var(--muted); padding:8px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
     .ts-home-hist-table td{ padding:9px 10px; border-bottom:1px solid rgba(15,23,42,.06); font-weight:700; }
     .ts-home-hist-status{ display:inline-block; font-size:11px; font-weight:900; padding:2px 9px; border-radius:999px; background: var(--good-bg); color: var(--good-text); }
 
-    .ts-home-cta{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
-    .ts-home-cta-ic{ width:44px; height:44px; border-radius:12px; background:rgba(26,109,255,.12); display:grid; place-items:center; color:#0D3EDB; flex:0 0 auto; }
-    .ts-home-cta-ic svg{ width:22px; height:22px; }
-    .ts-home-cta-text{ flex:1 1 260px; }
-    .ts-home-cta-text .t{ font-size:14.5px; font-weight:900; margin-bottom:3px; }
-    .ts-home-cta-text .d{ font-size:12.5px; color:var(--muted); font-weight:700; }
-    .ts-home-cta-btn{
-      flex:0 0 auto; background: linear-gradient(135deg,var(--primary),var(--primary2)); color:#fff;
-      font-size:13px; font-weight:900; padding:11px 18px; border-radius:12px; border:none; cursor:pointer;
+    /* ---------- 기회·시뮬레이션 티저 / 데이터 완성도 ---------- */
+    .ts-card-link{
+      font-size:12.5px; font-weight:800; color: var(--primary2); cursor:pointer;
+      background:none; border:none; white-space:nowrap; flex:0 0 auto; padding:0;
     }
+    .ts-card-link:hover{ text-decoration:underline; }
 
-    /* ---------- 핵심 진단 / 기회·시뮬레이션 티저 / 데이터 완성도 ---------- */
-    .ts-corediag-item{ padding:12px 0; border-top:1px dashed var(--line); }
-    .ts-corediag-item:first-child{ border-top:none; padding-top:0; }
-    .ts-corediag-top{ display:flex; align-items:center; gap:8px; margin-bottom:4px; }
-    .ts-corediag-top .dot{ font-size:13px; }
-    .ts-corediag-top .label{ font-size:13.5px; font-weight:900; }
-    .ts-corediag-value{ font-size:20px; font-weight:900; letter-spacing:-.4px; }
-    .ts-corediag-sub{ font-size:12px; color:var(--muted); font-weight:700; margin-top:2px; }
-    .ts-corediag-note{ font-size:12px; color:#991b1b; font-weight:800; margin-top:6px; }
-
-    .ts-opp-teaser-main{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
+    .ts-opp-teaser-main{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
     .ts-opp-teaser-main .cnt{ font-size:13px; font-weight:800; color:var(--muted); }
     .ts-opp-teaser-main .amt{ font-size:19px; font-weight:900; color:#0D3EDB; }
-    .ts-opp-teaser-top{ font-size:12.5px; font-weight:700; color: rgba(11,18,32,.7); margin-bottom:12px; }
+    .ts-opp-teaser-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    .ts-opp-teaser-top{ font-size:12.5px; font-weight:700; color: rgba(11,18,32,.7); }
 
-    .ts-completeness-top{ display:flex; align-items:baseline; gap:10px; margin-bottom:6px; }
+    .ts-sim-result-banner{
+      display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+      background: rgba(22,163,74,.08); border:1px solid rgba(22,163,74,.18); border-radius:12px;
+      padding:10px 14px; margin-top:10px; font-size:12.5px; font-weight:700; color: rgba(11,18,32,.75);
+    }
+    .ts-sim-result-banner .arrow{ color: var(--good-text); font-size:15px; }
+    .ts-sim-result-banner b{ color: var(--good-text); font-size:14px; }
+
+    .ts-completeness-row{ display:flex; align-items:center; justify-content:space-between; gap:16px; }
+    .ts-completeness-stat{ flex:1; min-width:0; }
+    .ts-completeness-top{ display:flex; align-items:baseline; gap:10px; margin-bottom:8px; }
     .ts-completeness-top .pct{ font-size:22px; font-weight:900; }
     .ts-completeness-top .lbl{ font-size:12.5px; font-weight:800; color:var(--muted); }
-    .ts-completeness-note{ font-size:12px; color: rgba(11,18,32,.7); font-weight:700; line-height:1.5; margin-bottom:12px; }
+    .ts-completeness-bar{ width:100%; height:6px; border-radius:999px; background: rgba(15,23,42,.08); overflow:hidden; }
+    .ts-completeness-bar-fill{ height:100%; background: linear-gradient(90deg,var(--primary),var(--primary2)); border-radius:999px; }
+    .ts-completeness-note{ font-size:12px; color: rgba(11,18,32,.7); font-weight:700; line-height:1.5; }
+
+    .ts-goal-input-row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .ts-goal-input-row input{
+      flex:1 1 140px; min-width:0; border:1px solid var(--line); border-radius:10px; padding:9px 10px;
+      font-size:12.5px; font-weight:700; background:#fff; box-sizing:border-box;
+    }
+    .ts-goal-input-row input:focus{ outline:none; border-color: var(--primary); }
 
     /* ---------- 장부 관리 (Ledger) ---------- */
     .ts-ledger-summary{
@@ -799,11 +645,6 @@
     .ts-ledger-ai-ic svg{ width:20px; height:20px; }
     .ts-ledger-ai-title{ font-size:14px; font-weight:900; margin-bottom:2px; }
     .ts-ledger-ai-detail{ font-size:12.5px; font-weight:700; color: rgba(11,18,32,.62); }
-    .ts-ledger-ai-stats{ display:flex; gap:8px; flex-wrap:wrap; }
-    .ts-ledger-ai-chip{ font-size:11px; font-weight:900; padding:5px 11px; border-radius:999px; white-space:nowrap; }
-    .ts-ledger-ai-chip.done{ background: var(--good-bg); color: var(--good-text); }
-    .ts-ledger-ai-chip.review{ background: var(--warn2-bg); color: var(--warn2-text); }
-    .ts-ledger-ai-chip.missing{ background: var(--risk-bg); color: var(--risk-text); }
 
     .ts-ledger-filter-row{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
     .ts-ledger-tabs{ display:flex; gap:4px; background:rgba(255,255,255,.8); border:1px solid var(--line); border-radius:12px; padding:3px; }
@@ -825,7 +666,7 @@
 
     .ts-ledger-table-wrap{
       background: rgba(255,255,255,.85); border:1px solid var(--line); border-radius:16px;
-      overflow:hidden; box-shadow: var(--shadow2);
+      overflow-x:auto; box-shadow: var(--shadow2);
     }
     .ts-ledger-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
     .ts-ledger-table th{ text-align:left; font-weight:800; color:var(--muted); padding:10px 12px; border-bottom:1px solid var(--line); white-space:nowrap; background: rgba(15,23,42,.02); }
@@ -854,7 +695,6 @@
     .ts-ledger-evi-row{ display:flex; justify-content:space-between; font-size:12.5px; font-weight:700; padding:6px 0; border-top:1px dashed var(--line); }
     .ts-ledger-evi-row:first-of-type{ border-top:none; }
     .ts-ledger-evi-row .v{ color:#991b1b; font-weight:900; }
-    .ts-ledger-side-note{ font-size:11.5px; color:var(--muted); font-weight:700; margin:10px 0; line-height:1.5; }
     .ts-ledger-side-link{
       display:block; text-align:center; font-size:12px; font-weight:900; color: var(--primary2);
       background: rgba(46,197,255,.10); border-radius:10px; padding:9px; cursor:pointer; border:none; width:100%;
@@ -870,16 +710,36 @@
     .ts-ledger-detail-row:first-of-type{ border-top:none; }
     .ts-ledger-detail-row .k{ font-size:11px; font-weight:800; color:var(--muted); margin-bottom:3px; }
     .ts-ledger-detail-row .v{ font-size:12.5px; font-weight:800; }
+    .ts-ledger-reclassify-row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:4px; }
+    .ts-ledger-reclassify-row select{
+      border:1px solid var(--line); border-radius:8px; padding:6px 8px;
+      font-size:12px; font-weight:700; background:#fff;
+    }
     .ts-ledger-detail-ai{
       background: rgba(46,197,255,.08); border-radius:10px; padding:10px 12px;
       font-size:11.5px; font-weight:700; color: rgba(11,18,32,.72); line-height:1.6; margin:10px 0;
     }
-    .ts-ledger-detail-actions{ display:flex; gap:8px; margin-top:10px; }
+    .ts-ledger-detail-actions{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
     .ts-ledger-detail-btn{
-      flex:1; border:1px solid var(--line); background:#fff; color: rgba(11,18,32,.72);
+      flex:1 1 100px; border:1px solid var(--line); background:#fff; color: rgba(11,18,32,.72);
       font-size:11.5px; font-weight:800; padding:9px; border-radius:10px; cursor:pointer;
     }
     .ts-ledger-detail-close{ border:none; background:transparent; color:var(--muted); cursor:pointer; font-size:12px; padding:2px 6px; float:right; }
+
+    .ts-ledger-recurring-row{
+      display:flex; align-items:center; justify-content:space-between; gap:8px;
+      padding:8px 0; border-top:1px dashed var(--line);
+    }
+    .ts-ledger-recurring-row:first-of-type{ border-top:none; }
+    .ts-ledger-recurring-vendor{ font-size:12.5px; font-weight:800; }
+    .ts-ledger-recurring-amt{ font-size:11.5px; font-weight:700; color:var(--muted); margin-top:2px; }
+    .ts-ledger-recurring-actions{ display:flex; align-items:center; gap:6px; flex:0 0 auto; }
+    .ts-ledger-recurring-actions .ts-ledger-side-link{ width:auto; padding:6px 12px; }
+    .ts-ledger-recurring-del{
+      border:none; background:transparent; color:var(--muted); cursor:pointer;
+      font-size:12px; width:22px; height:22px; border-radius:6px; line-height:1;
+    }
+    .ts-ledger-recurring-del:hover{ background: rgba(239,68,68,.10); color:#991b1b; }
 
     .ts-ledger-add-row td{ background: rgba(46,197,255,.05); }
     .ts-ledger-add-row input, .ts-ledger-add-row select{
@@ -967,16 +827,6 @@
     .ts-report-headline-sub{ font-size:13px; font-weight:800; color:var(--muted); }
     .ts-report-headline-sub .sep{ margin:0 8px; opacity:.5; }
 
-    .ts-report-health-top{ display:flex; align-items:baseline; gap:10px; margin-bottom:12px; }
-    .ts-report-health-score{ font-size:28px; font-weight:900; letter-spacing:-.5px; }
-    .ts-report-health-score span{ font-size:14px; font-weight:800; color:var(--muted); }
-    .ts-report-health-tone{ font-size:12.5px; font-weight:900; padding:4px 11px; border-radius:999px; background: var(--warn2-bg); color: var(--warn2-text); }
-    .ts-report-health-grid{ display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:10px; }
-    @media (max-width:640px){ .ts-report-health-grid{ grid-template-columns: repeat(2,1fr); } }
-    .ts-report-health-item{ background: rgba(15,23,42,.03); border-radius:12px; padding:10px 12px; text-align:center; }
-    .ts-report-health-item span{ display:block; font-size:11px; font-weight:800; color:var(--muted); margin-bottom:4px; }
-    .ts-report-health-item b{ font-size:15px; font-weight:900; }
-
     .ts-report-change-row{ display:flex; align-items:center; gap:10px; padding:9px 0; border-top:1px dashed var(--line); font-size:12.5px; font-weight:700; }
     .ts-report-change-row:first-child{ border-top:none; }
     .ts-report-change-ic{ flex:0 0 auto; font-size:14px; }
@@ -993,14 +843,6 @@
 
     .ts-report-good-item{ font-size:13px; font-weight:700; padding:8px 0; border-top:1px dashed var(--line); }
     .ts-report-good-item:first-child{ border-top:none; }
-
-    .ts-report-issue-item{ padding:12px 0; border-top:1px dashed var(--line); }
-    .ts-report-issue-item:first-child{ border-top:none; padding-top:0; }
-    .ts-report-issue-top{ display:flex; align-items:center; gap:8px; margin-bottom:4px; }
-    .ts-report-issue-top .rank{ font-size:10.5px; font-weight:900; padding:3px 9px; border-radius:999px; background: var(--risk-bg); color:#991b1b; }
-    .ts-report-issue-top span:last-child{ font-size:13.5px; font-weight:900; }
-    .ts-report-issue-diff{ font-size:12.5px; font-weight:700; color:#991b1b; margin-bottom:4px; }
-    .ts-report-issue-impact{ font-size:12px; color:var(--muted); font-weight:700; line-height:1.5; }
 
     .ts-report-sim-base{ font-size:13px; font-weight:800; color:var(--muted); margin-bottom:12px; }
     .ts-report-sim-base b{ color:var(--text); font-size:15px; }
@@ -1022,174 +864,12 @@
     #selTaxpayerGuess{
       font-weight:800;
     }
-    .kpi-badge{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-width:58px;
-      padding:4px 10px;
-      border-radius:999px;
-      font-size:11px;
-      font-weight:900;
-      margin-bottom:10px;
-    }
-    .kpi-good{ background: var(--good-bg); color: var(--good-text); }
-    .kpi-warn{ background: var(--warn2-bg); color: var(--warn2-text); }
-    .kpi-risk{ background: var(--risk-bg); color: var(--risk-text); }
-    .kpi-unknown{ background: var(--neutral-bg); color: var(--neutral-text); }
-
-    .benchmark-card{
-      background: rgba(255,255,255,.78);
-      border:1px solid var(--line);
-      border-radius: 18px;
-      padding:14px;
-      box-shadow: var(--shadow2);
-      margin-bottom:12px;
-    }
-    .benchmark-card h3{
-      margin:0 0 10px;
-      font-size:14px;
-      font-weight:900;
-      color: rgba(11,18,32,.86);
-    }
-    .benchmark-meta{
-      font-size:12px;
-      color: rgba(11,18,32,.58);
-      font-weight:800;
-      margin-bottom:10px;
-    }
-    .bench-table-wrap{
-      overflow:auto;
-      border:1px solid var(--line);
-      border-radius:14px;
-      background:#fff;
-    }
-    .bench-table{
-      width:100%;
-      border-collapse:collapse;
-      min-width:760px;
-    }
-    .bench-table th,
-    .bench-table td{
-      padding:12px 10px;
-      border-bottom:1px solid var(--line);
-      text-align:left;
-      font-size:12px;
-      vertical-align:middle;
-    }
-    .bench-table th{
-      background: rgba(11,18,32,.03);
-      font-weight:900;
-      color: rgba(11,18,32,.74);
-    }
-    .bench-table td{
-      font-weight:800;
-      color: rgba(11,18,32,.82);
-    }
-
-    .meta-grid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:12px;
-      margin-bottom:12px;
-    }
-    .meta-card{
-      background: rgba(255,255,255,.78);
-      border:1px solid var(--line);
-      border-radius:18px;
-      padding:14px;
-      box-shadow: var(--shadow2);
-      min-height:160px;
-    }
-    .meta-card h3{
-      margin:0 0 10px;
-      font-size:14px;
-      font-weight:900;
-      color: rgba(11,18,32,.86);
-    }
-
-    .report-list{
-      margin:0;
-      padding-left:18px;
-    }
-    .report-list li{
-      margin:0 0 8px;
-      line-height:1.45;
-      font-size:13px;
-      font-weight:700;
-      color: rgba(11,18,32,.84);
-    }
     .empty-note{
       font-size:13px;
       color: rgba(11,18,32,.56);
       font-weight:800;
       line-height:1.5;
     }
-    .brief-item{
-      padding:10px 12px;
-      border:1px solid var(--line);
-      border-radius:14px;
-      background: rgba(11,18,32,.03);
-    }
-    .brief-item + .brief-item{ margin-top:8px; }
-    .brief-k{
-      font-size:12px;
-      color: rgba(11,18,32,.58);
-      font-weight:900;
-      margin-bottom:6px;
-    }
-    .brief-v{
-      font-size:15px;
-      font-weight:900;
-      letter-spacing:-0.2px;
-    }
-    .action-block, .risk-block{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px;
-      background: rgba(11,18,32,.03);
-    }
-    .action-block + .action-block,
-    .risk-block + .risk-block{
-      margin-top:8px;
-    }
-    .block-title{
-      font-size:13px;
-      font-weight:900;
-      margin-bottom:6px;
-    }
-    .block-sub{
-      font-size:12px;
-      color: rgba(11,18,32,.70);
-      font-weight:800;
-      line-height:1.45;
-    }
-    .mini-list{
-      margin:8px 0 0;
-      padding-left:18px;
-    }
-    .mini-list li{
-      margin:0 0 6px;
-      font-size:12px;
-      font-weight:700;
-      color: rgba(11,18,32,.80);
-      line-height:1.4;
-    }
-
-    .level-chip{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-width:56px;
-      padding:4px 8px;
-      border-radius:999px;
-      font-size:11px;
-      font-weight:900;
-    }
-    .level-good{ background: var(--good-bg); color: var(--good-text); }
-    .level-warn{ background: var(--warn2-bg); color: var(--warn2-text); }
-    .level-risk{ background: var(--risk-bg); color: var(--risk-text); }
-    .level-neutral{ background: var(--neutral-bg); color: var(--neutral-text); }
 
     pre{
       margin:0;
@@ -1215,37 +895,6 @@
       border:1px solid rgba(26,109,255,.14);
       background: linear-gradient(180deg, rgba(26,109,255,.06), rgba(255,255,255,.82));
       box-shadow: var(--shadow2);
-    }
-    .precision-cta-head{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:12px;
-      flex-wrap:wrap;
-    }
-    .precision-cta-title{
-      font-size:15px;
-      font-weight:900;
-      letter-spacing:-0.2px;
-      margin-bottom:4px;
-    }
-    .precision-cta-desc{
-      font-size:12px;
-      color:rgba(11,18,32,.62);
-      font-weight:800;
-      line-height:1.5;
-    }
-    .precision-chip{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      background:#fff;
-      border:1px solid rgba(15,23,42,.08);
-      border-radius:999px;
-      padding:8px 12px;
-      font-size:12px;
-      font-weight:900;
-      color:rgba(11,18,32,.72);
     }
     .wizard-shell{
       margin-top:16px;
@@ -1288,12 +937,6 @@
       font-size:13px;
       font-weight:900;
       margin-bottom:4px;
-    }
-    .wizard-step-desc{
-      font-size:11px;
-      color:rgba(11,18,32,.58);
-      font-weight:800;
-      line-height:1.4;
     }
     .wizard-body{
       margin-top:8px;
@@ -1385,44 +1028,6 @@
     .criteria-table th,.criteria-table td{padding:12px 10px; border-bottom:1px solid rgba(15,23,42,.08); text-align:left; font-size:13px;}
     .criteria-table th{background:rgba(11,18,32,.04); font-weight:900; color:rgba(11,18,32,.70);}
     .criteria-table td{font-weight:700; color:rgba(11,18,32,.82);}
-    .financial-summary-card{border:1px solid rgba(15,23,42,.08); border-radius:24px; background:rgba(255,255,255,.92); padding:18px;}
-    .financial-total-label{font-size:13px; color:rgba(11,18,32,.56); font-weight:900;}
-    .financial-total-value{font-size:24px; font-weight:900; letter-spacing:-.5px; margin:10px 0 8px; color:#64748b;}
-    .financial-desc{font-size:13px; color:rgba(11,18,32,.66); font-weight:700; line-height:1.6; margin-bottom:14px;}
-    .financial-bar{display:flex; width:100%; height:20px; overflow:hidden; border-radius:999px; background:rgba(15,23,42,.06); margin-bottom:16px;}
-    .financial-bar-seg{height:100%;}
-    .financial-donut-row{display:grid; grid-template-columns:150px 1fr; gap:20px; align-items:center; margin-bottom:16px;}
-    .financial-donut-wrap{position:relative; width:150px; height:150px;}
-    .financial-donut-center{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none;}
-    .financial-donut-center-label{font-size:12px; font-weight:800; color:rgba(11,18,32,.56);}
-    .financial-donut-center-value{font-size:18px; font-weight:900; margin-top:2px;}
-    .financial-legend{display:flex; flex-direction:column; gap:10px;}
-    .financial-legend-row{display:flex; align-items:center; gap:8px; font-size:13px; font-weight:800; color:rgba(11,18,32,.76);}
-    .financial-legend-dot{width:11px; height:11px; border-radius:4px; flex:0 0 auto;}
-    .financial-list{display:grid; gap:12px;}
-    .financial-item{display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:center; padding:14px; border:1px solid rgba(15,23,42,.08); border-radius:18px; background:rgba(255,255,255,.96);}
-    .financial-icon{width:44px; height:44px; border-radius:999px; display:grid; place-items:center; font-weight:900; color:rgba(11,18,32,.70);}
-    .financial-label{font-size:15px; font-weight:900; margin-bottom:4px;}
-    .financial-sub{font-size:13px; color:#64748b; font-weight:900;}
-    .financial-amount{font-size:16px; font-weight:900; color:rgba(11,18,32,.82); white-space:nowrap;}
-    .financial-comment{margin-top:14px; font-size:14px; font-weight:900; color:rgba(11,18,32,.74);}
-    .history-head{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px;}
-    .history-title-inline{display:flex; align-items:center; gap:8px;}
-    .history-calendar-btn{border:none; width:34px; height:34px; border-radius:999px; background:rgba(26,109,255,.10); color:#1A6DFF; cursor:pointer; display:grid; place-items:center; font-size:16px;}
-    .history-calendar-btn:hover{background:rgba(26,109,255,.16);}
-.history-month-control{position:relative; overflow:visible;}
-    .history-month-popover{position:absolute; top:calc(100% + 10px); right:0; width:312px; padding:14px; border-radius:22px; background:rgba(255,255,255,.98); border:1px solid rgba(15,23,42,.10); box-shadow:0 24px 54px rgba(15,23,42,.16); z-index:30;}
-    .history-month-popover-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px;}
-    .history-month-popover-year{font-size:16px; font-weight:900; letter-spacing:-.3px;}
-    .history-month-nav-btn{border:none; width:36px; height:36px; border-radius:999px; cursor:pointer; background:rgba(11,18,32,.06); font-size:22px; line-height:1; font-weight:900; color:rgba(11,18,32,.72);}
-    .history-month-popover-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
-    .history-month-popover-month{border:none; border-radius:16px; padding:14px 8px; cursor:pointer; font-weight:900; font-size:18px; background:rgba(248,250,252,.95); box-shadow:inset 0 0 0 1px rgba(15,23,42,.06); color:rgba(11,18,32,.82);}
-    .history-month-popover-month:hover{background:rgba(26,109,255,.08);}
-    .history-month-popover-month.active{background:linear-gradient(135deg,var(--primary),var(--primary2)); color:#fff; box-shadow:none;}
-    .history-month-popover-month.current{box-shadow:inset 0 0 0 1px rgba(26,109,255,.18);}
-    .history-month-popover-foot{display:flex; justify-content:space-between; gap:10px; margin-top:14px;}
-    .history-month-foot-btn{border:none; background:rgba(11,18,32,.06); color:rgba(11,18,32,.72); border-radius:999px; padding:12px 18px; font-size:15px; font-weight:900; cursor:pointer;}
-    .history-month-foot-btn.primary{background:rgba(26,109,255,.10); color:#1A6DFF;}
     body.precision-open{overflow:hidden;}
     body.precision-open::before{content:""; position:fixed; inset:0; background:rgba(15,23,42,.34); backdrop-filter:blur(4px); z-index:59;}
     #precisionWizard{position:fixed; left:50%; top:50%; transform:translate(-50%, -50%); width:min(980px, calc(100vw - 28px)); max-height:calc(100vh - 40px); overflow:auto; z-index:60; margin-top:0;}
@@ -1444,102 +1049,29 @@
     #panelInput .chip{font-size:13px; padding:10px 12px;}
     #panelInput .btn{font-size:15px; padding:12px 16px;}
 
-
-    #diagnosisSummaryBox .block-sub{font-size:15px; line-height:1.65; font-weight:800;}
-    #diagnosisSummaryBox .risk-block{padding:14px 16px;}
-    .history-record-list{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;}
-    .history-record-btn{border:none; background:rgba(26,109,255,.08); color:#1A6DFF; border-radius:999px; padding:8px 12px; font-weight:800; cursor:pointer;}
-    .history-record-btn.active{background:linear-gradient(135deg,var(--primary),var(--primary2)); color:#fff;}
-
     .hidden{display:none !important}
 
-    @media (max-width: 1180px){
-      .kpi-grid{grid-template-columns: repeat(3, 1fr)}
-    }
+    
     @media (max-width: 980px){
       .row{grid-template-columns: 1fr}
       .row-2{grid-template-columns: 1fr}
       .row-3{grid-template-columns: 1fr}
       .summary-grid{grid-template-columns: 1fr 1fr}
-      .insight-row{grid-template-columns: 1fr}
-      .result-grid{grid-template-columns: 1fr}
-      .report-grid{grid-template-columns: 1fr}
-      .kpi-grid{grid-template-columns: 1fr 1fr}
-      .meta-grid{grid-template-columns: 1fr}
       h1{font-size:34px}
       .brand{min-width: 0}
       .money-line{grid-template-columns:1fr}
       .quick-adds{justify-content:flex-start}
     }
-  
-    /* PDF 버튼 그라데이션 통일 */
-    .btn.pdf,
-    .btn-pdf,
-    #btnPdf,
-    .pdf-btn{
-      border:none;
-      color:#fff;
-      background: linear-gradient(135deg,#2EC5FF 0%,#1A6DFF 45%,#0D3EDB 100%);
-      box-shadow:0 18px 40px rgba(26,109,255,.22);
-    }
-
-    .diagnostic-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:12px;margin-bottom:12px}
-    @media (max-width:820px){.diagnostic-grid{grid-template-columns:1fr}}
-    .opp-header-row{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:4px;flex-wrap:wrap}
-    .opp-title{font-size:22px;font-weight:900;margin:0}
-    .opp-total{text-align:right}
-    .opp-total .lbl{font-size:11.5px;color:var(--muted);font-weight:700;margin-bottom:2px}
-    .opp-total .val{font-size:19px;font-weight:900;color:#2f5fe0}
-    .opp-card{border-radius:16px;border:1px solid rgba(15,23,42,.08);background:#fff;padding:18px;margin-bottom:14px}
-    .opp-card .amt-row{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:12px 0}
-    @media (max-width:480px){.opp-card .amt-row{grid-template-columns:1fr}}
-    .opp-card .amt-row .lbl{font-size:11.5px;color:var(--muted);font-weight:700;margin-bottom:3px}
-    .opp-card .amt-row .val{font-size:17px;font-weight:900}
-    .opp-card .amt-row .val.val-green{color:#16a34a}
-    .econ-box{background:#f6f8fc;border-radius:10px;padding:12px 14px;margin-top:8px}
-    .econ-box .t{font-size:12px;font-weight:800;color:var(--muted);margin-bottom:8px}
-    .econ-grid{display:flex;gap:18px;flex-wrap:wrap}
-    .econ-grid div{font-size:11.5px;color:var(--muted);font-weight:700}
-    .econ-grid b{display:block;font-size:14px;color:var(--text)}
-    .econ-grid .neg{color:#dc2626}
+    
+    
     .verdict{
       display:flex;align-items:flex-start;gap:6px;
       background:#fbf3f2;border-left:3px solid #e3a9a4;border-radius:8px;
       padding:8px 12px;margin-top:10px;
       font-size:12.5px;font-weight:600;color:#9a4a45;line-height:1.5;
     }
-    .rule-foot{font-size:11.5px;color:var(--muted);margin-top:10px;border-top:1px dashed rgba(15,23,42,.1);padding-top:8px;line-height:1.8}
-    .sim-controls-row{display:flex;align-items:center;gap:12px;margin:14px 0}
-    .stepper{display:flex;border:1px solid rgba(15,23,42,.12);border-radius:999px;overflow:hidden}
-    .stepper button{width:32px;height:32px;border:none;background:#f6f8fc;font-weight:900;font-size:16px;cursor:pointer}
-    .sim-controls-row input[type=range]{flex:1}
-    .sim-result-row{font-size:14px}
-    .sim-result-row .after{color:#16a34a;font-weight:900;font-size:18px}
-    .ai-note{
-      background:#f7f8fb;border-left:3px solid #B9C6EE;border-radius:8px;
-      padding:10px 14px;margin-top:12px;font-size:12.5px;font-weight:500;
-      color:#525a6e;line-height:1.55;
-    }
-    .ai-note b, .ai-note strong{color:#39415a;font-weight:800}
-    .tax-line{display:flex;justify-content:space-between;padding:8px 0;font-size:13.5px}
-    .tax-line span{color:var(--muted);font-weight:700}
-    .tax-line b{font-weight:900}
-    .wow-banner{background:linear-gradient(135deg,#1A6DFF,#0D3EDB);color:#fff;border-radius:16px;padding:18px 20px;margin-bottom:12px}
-    .wow-banner .h{font-size:17px;font-weight:900;margin:0 0 6px}
-    .wow-banner .d{font-size:13.5px;opacity:.92;margin:0;line-height:1.6}
-    .diag-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-    @media (max-width:820px){.diag-grid{grid-template-columns:1fr}}
-    .diag-card{background:#fff;border-radius:16px;border:1px solid rgba(15,23,42,.08);padding:16px}
-    .diag-card .icon{font-size:22px;margin-bottom:8px}
-    .diag-card .val{font-size:20px;font-weight:900;margin-bottom:4px}
-    .diag-card .lbl{font-size:12.5px;font-weight:800;color:var(--muted);margin-bottom:6px}
-    .diag-card .cmt{font-size:12px;color:var(--muted);line-height:1.55}
-    .sim-cards-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}
-    @media (max-width:820px){.sim-cards-row{grid-template-columns:1fr}}
-    .sim-mini-card{border:1px solid rgba(15,23,42,.1);border-radius:14px;padding:14px;text-align:center;background:#fff}
-    .sim-mini-card.best{border-color:#1A6DFF;box-shadow:0 0 0 3px rgba(26,109,255,.12)}
-    .sim-mini-card .lbl{font-size:12.5px;font-weight:800;margin-bottom:8px}
-    .sim-mini-card .delta{font-size:17px;font-weight:900;color:#1A6DFF}
+    
+    
     .why-details{margin-top:10px;font-size:12.5px}
     .why-details summary{
       list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:4px;
@@ -1565,7 +1097,10 @@
         </div>
       </div>
 
-      <button id="btnLogout" class="logout" type="button">로그아웃</button>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span id="guestModeBadge" class="hidden" style="font-size:11.5px; font-weight:800; padding:5px 10px; border-radius:999px; background:rgba(255,171,0,.14); color:#b45309; border:1px solid rgba(255,171,0,.35);">게스트 모드</span>
+        <button id="btnLogout" class="logout" type="button">로그아웃</button>
+      </div>
     </div>
   </header>
 
@@ -1783,25 +1318,21 @@
                 <img src="./icon-input-chart.png" alt="" style="width:22px;height:22px;object-fit:contain;margin-bottom:4px;" />
                 <div class="wizard-step-no">STEP 1</div>
                 <div class="wizard-step-title">비용 분해</div>
-                <div class="wizard-step-desc">재료비 · 임대료 · 기타비용</div>
               </div>
               <div class="wizard-step-chip" data-step-chip="2">
                 <img src="./icon-input-document.png" alt="" style="width:22px;height:22px;object-fit:contain;margin-bottom:4px;" />
                 <div class="wizard-step-no">STEP 2</div>
                 <div class="wizard-step-title">매입 증빙</div>
-                <div class="wizard-step-desc">세금계산서 · 카드 · 현금영수증</div>
               </div>
               <div class="wizard-step-chip" data-step-chip="3">
                 <img src="./icon-input-location.png" alt="" style="width:22px;height:22px;object-fit:contain;margin-bottom:4px;" />
                 <div class="wizard-step-no">STEP 3</div>
                 <div class="wizard-step-title">추가 정보</div>
-                <div class="wizard-step-desc">면세 농산물 · 전년도 매출 · 급여</div>
               </div>
               <div class="wizard-step-chip" data-step-chip="4">
                 <img src="./icon-input-shieldpurple.png" alt="" style="width:22px;height:22px;object-fit:contain;margin-bottom:4px;" />
                 <div class="wizard-step-no">STEP 4</div>
                 <div class="wizard-step-title">검토 후 실행</div>
-                <div class="wizard-step-desc">입력 요약 확인 후 정밀 계산</div>
               </div>
             </div>
 
@@ -1829,7 +1360,6 @@
                       </div>
                     </div>
                   </div>
-                  <div class="help">입력하면 비용 항목별 비교가 더 정확해집니다.</div>
                 </div>
               </div>
 
@@ -1856,7 +1386,6 @@
                       </div>
                     </div>
                   </div>
-                  <div class="help">증빙 구분 시 세액 추정이 더 정확해집니다.</div>
                 </div>
               </div>
 
@@ -1888,7 +1417,7 @@
                       <input id="inpIndustryCodeManual" placeholder="업종코드 직접 입력(선택)" />
                     </div>
                   </div>
-                  <div class="help">업종코드 입력 시 우선 적용됩니다. 예: 5611</div>
+                  <div class="help">입력 시 업종코드가 우선 적용됩니다 (예: 5611)</div>
                 </div>
 
                 <div class="field" style="margin-top:14px;">
@@ -1910,7 +1439,7 @@
                       <input id="inpVisitCount" inputmode="numeric" placeholder="방문객 수(월)" />
                     </div>
                   </div>
-                  <div class="help">입력하면 절세 기회·객단가 분석("TS가 찾은 기회")에 함께 반영됩니다.</div>
+                  <div class="help">절세 기회·객단가 분석에 반영됩니다.</div>
                 </div>
               </div>
 
@@ -1924,10 +1453,6 @@
                     <div class="k">정밀 입력 요약</div>
                     <div id="wizardProSummary" class="v">아직 입력 전</div>
                   </div>
-                </div>
-
-                <div class="info-strip" style="margin-top:12px;">
-                  정밀 입력은 선택이며, 입력할수록 추정 정확도가 올라갑니다.
                 </div>
               </div>
             </div>
@@ -2004,125 +1529,7 @@
         </div>
       </section>
 
-      <section id="panelResult" class="panel hidden">
-        <div class="kpi-grid" id="kpiCardsWrap"></div>
-
-        <div class="benchmark-card">
-          <h3>벤치마크 비교</h3>
-          <div id="benchmarkMeta" class="benchmark-meta">계산 후 표시됩니다.</div>
-          <div class="bench-table-wrap">
-            <table class="bench-table">
-              <thead>
-                <tr>
-                  <th>지표</th>
-                  <th>내 값</th>
-                  <th>중간값</th>
-                  <th>상위 25% 기준</th>
-                  <th>하위 25% 기준</th>
-                  <th>차이(%p)</th>
-                  <th>레벨</th>
-                </tr>
-              </thead>
-              <tbody id="benchmarkTableBody">
-                <tr>
-                  <td colspan="7" class="empty-note" style="padding:14px;">계산 후 표시됩니다.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="meta-grid">
-          <div class="meta-card">
-            <h3>가정</h3>
-            <div id="metaAssumptions" class="empty-note">계산 후 표시됩니다.</div>
-          </div>
-          <div class="meta-card">
-            <h3>제한사항 / 부분 실패</h3>
-            <div id="metaFailures" class="empty-note">계산 후 표시됩니다.</div>
-          </div>
-        </div>
-
-        <div class="wow-banner" id="wowBanner" style="display:none">
-          <p class="h" id="wowHeadline">-</p>
-          <p class="d" id="wowDetail">-</p>
-        </div>
-
-        <div class="report-card" id="aiDiagCard" style="margin-bottom:12px">
-          <h3>🤖 AI 핵심 진단</h3>
-          <div class="diag-grid" id="aiDiagGrid"></div>
-        </div>
-
-        <div class="report-card" id="tsOpportunityCard" style="margin-bottom:12px">
-          <div class="opp-header-row">
-            <p class="opp-title">💰 TS가 찾은 기회</p>
-            <div class="opp-total">
-              <div class="lbl">예상 세액공제</div>
-              <div class="val" id="oppTotalCredit">-</div>
-            </div>
-          </div>
-          <div id="oppList"></div>
-        </div>
-
-        <div class="report-card" id="tsSimCard" style="margin-bottom:12px">
-          <h3>📈 바꾸면 얼마나 달라질까요?</h3>
-          <div class="sim-cards-row" id="simCardsRow"></div>
-          <div class="ai-note" id="simRecoBox" style="display:none">🎯 <span id="simRecoText">-</span></div>
-
-          <div id="simLabel" style="font-weight:800;margin-top:16px">계산 후 표시됩니다.</div>
-          <div class="sim-controls-row">
-            <div class="stepper"><button id="simMinus" type="button">-</button><button id="simPlus" type="button">+</button></div>
-            <input type="range" id="laborSlider" min="0" max="20" step="1" value="5" />
-          </div>
-          <div class="sim-result-row">현재 예상 이익 <b id="simBase">-</b> → <span class="after" id="simAfter">-</span></div>
-          <div class="ai-note">💡 <span id="simAiReco">-</span></div>
-        </div>
-
-        <div class="report-grid">
-          <div class="report-card">
-            <h3>요약 리포트</h3>
-            <div id="reportExecutive" class="empty-note">계산 후 표시됩니다.</div>
-          </div>
-
-          <div class="report-card">
-            <h3>세금 브리프</h3>
-            <div id="reportTaxBrief" class="empty-note">계산 후 표시됩니다.</div>
-          </div>
-
-          <div class="report-card">
-            <h3>세금 신고 요약</h3>
-            <div id="taxSignalBox" class="empty-note">계산 후 표시됩니다.</div>
-          </div>
-
-          <div class="report-card hidden" aria-hidden="true">
-            <h3>리스크 드라이버</h3>
-            <div id="reportRisk" class="empty-note">계산 후 표시됩니다.</div>
-          </div>
-        </div>
-
-        <div class="action-grid">
-          <div class="report-card">
-            <h3>실행 액션</h3>
-            <div id="actionSummaryBox" class="empty-note">계산 후 표시됩니다.</div>
-          </div>
-
-          <div class="report-card">
-            <h3>가장 먼저 할 일</h3>
-            <div id="reportActions" class="empty-note">계산 후 표시됩니다.</div>
-          </div>
-        </div>
-
-        <div class="result-grid hidden" aria-hidden="true">
-          <div class="result-card">
-            <h3>정밀 리포트 (원본 응답)</h3>
-            <pre id="preJson">{}</pre>
-          </div>
-          <div class="result-card">
-            <h3>요약/메타</h3>
-            <pre id="preMeta">{}</pre>
-          </div>
-        </div>
-      </section>
+      <section id="panelResult" class="panel hidden"></section>
     </div>
 
     <div id="criteriaGuideModal" class="guide-modal hidden" aria-hidden="true">
@@ -2164,6 +1571,6 @@
     }, true);
   </script>
 
-  <script src="./member.js?v=20260910b"></script>
+  <script src="./member.js?v=20260910v"></script>
 </body>
 </html>

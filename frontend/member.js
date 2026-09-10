@@ -13,24 +13,29 @@
   const LS_TODO_CUSTOM_KEY = "ts_dash_todo_custom_v1";
   const LS_TODO_OVERRIDE_KEY = "ts_dash_todo_override_v1";
   const LS_TODO_DELETED_KEY = "ts_dash_todo_deleted_v1";
+  const LS_MONTH_GOAL_KEY = "ts_month_goal_v1";
+  const LS_SAVE_SCENARIOS_KEY = "ts_save_scenarios_v1";
+  const LS_EVIDENCE_REMINDER_KEY = "ts_evidence_reminder_v1";
+  const LS_ALERT_THRESHOLD_KEY = "ts_alert_threshold_v1";
+  const DEFAULT_ALERT_THRESHOLD_PP = 10;
+  const METRIC_WORSE_WHEN_HIGH = {
+    COST_RATIO: true,
+    LABOR_RATIO: true,
+    MATERIAL_RATIO: true,
+    RENT_RATIO: true,
+    OTHER_RATIO: true,
+    PROFIT_RATIO: false,
+  };
 
   const DEFAULT_API_BASE = (() => {
     const h = location.hostname;
     return (h === "localhost" || h === "127.0.0.1") ? "http://127.0.0.1:8000" : "";
   })();
 
-  let benchShowAll = false;
-  let benchChart = null;
-  let financialChart = null;
-  let historyTrendChart = null;
-  let taxDonutChart = null;
   let reportTrendChart = null;
   let reportTrendMetric = "sales";
   let lastResponse = null;
   let lastV2Data = null;
-  let lastRecords = [];
-  let historySelectedMonth = "";
-  let historyPickerYear = new Date().getFullYear();
 
   function normalizeBase(v) {
     const s = String(v || "").trim();
@@ -208,25 +213,12 @@
   const criteriaGuideContent = $("criteriaGuideContent");
   const btnCloseCriteriaGuide = $("btnCloseCriteriaGuide");
 
-  const preJson = $("preJson");
-  const preMeta = $("preMeta");
   const prePayload = $("prePayload");
   const errorBox = $("errorBox");
   const errorText = $("errorText");
 
   const costMismatchBox = $("costMismatchBox");
   const costMismatchText = $("costMismatchText");
-
-  const reportExecutive = $("reportExecutive");
-  const reportTaxBrief = $("reportTaxBrief");
-  const reportRisk = $("reportRisk");
-  const reportActions = $("reportActions");
-
-  const kpiCardsWrap = $("kpiCardsWrap");
-  const benchmarkMeta = $("benchmarkMeta");
-  const benchmarkTableBody = $("benchmarkTableBody");
-  const metaAssumptions = $("metaAssumptions");
-  const metaFailures = $("metaFailures");
 
   function showError(msg) {
     errorText.textContent = String(msg || "오류가 발생했습니다.");
@@ -848,61 +840,15 @@
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       closeMonthPopover();
-      closeHistoryMonthPopover();
       closeCriteriaGuide();
       if (precisionOpen) closePrecisionWizard();
     }
   });
 
-  document.addEventListener("click", (e) => {
-    const t = e.target;
-    if (!(t instanceof HTMLElement)) return;
-
-    if (t.id === "btnHistoryCalendar" || t.closest("#btnHistoryCalendar")) {
-      e.preventDefault();
-      e.stopPropagation();
-      toggleHistoryMonthPopover();
-      return;
-    }
-
-    if (t.id === "btnHistoryPrevYear" || t.closest("#btnHistoryPrevYear")) {
-      e.preventDefault();
-      historyPickerYear -= 1;
-      renderHistoryMonthPopover();
-      return;
-    }
-
-    if (t.id === "btnHistoryNextYear" || t.closest("#btnHistoryNextYear")) {
-      e.preventDefault();
-      historyPickerYear += 1;
-      renderHistoryMonthPopover();
-      return;
-    }
-
-    if (t.id === "btnHistoryThis" || t.closest("#btnHistoryThis")) {
-      e.preventDefault();
-      const now = new Date();
-      const yyyy = now.getFullYear();
-      const mm = String(now.getMonth() + 1).padStart(2, "0");
-      historySelectedMonth = `${yyyy}-${mm}`;
-      if (lastResponse) renderHistoryComparison(lastResponse);
-      closeHistoryMonthPopover();
-      return;
-    }
-
-    if (t.id === "btnHistoryClear" || t.closest("#btnHistoryClear")) {
-      e.preventDefault();
-      historySelectedMonth = "";
-      if (lastResponse) renderHistoryComparison(lastResponse);
-      closeHistoryMonthPopover();
-      return;
-    }
-
-    const pop = $("historyMonthPopover");
-    if (pop && !pop.classList.contains("hidden") && !pop.contains(t)) {
-      closeHistoryMonthPopover();
-    }
-  });
+  if (!getToken()) {
+    $("guestModeBadge")?.classList.remove("hidden");
+    btnLogout.textContent = "로그인";
+  }
 
   btnLogout.addEventListener("click", (e) => {
     e.preventDefault();
@@ -1057,197 +1003,8 @@
     return map[metric] || metric;
   }
 
-  function levelChipClass(level) {
-    const v = String(level || "").toUpperCase();
-    if (v === "GOOD" || v === "LOW") return "level-chip level-good";
-    if (v === "WARN" || v === "MID") return "level-chip level-warn";
-    if (v === "RISK" || v === "HIGH") return "level-chip level-risk";
-    return "level-chip level-neutral";
-  }
-
   function ensureDynamicUi() {
     if (!panelResult) return;
-
-    const assumptionsCard = metaAssumptions?.closest(".meta-card");
-    if (assumptionsCard) assumptionsCard.style.display = "none";
-
-    const metaGrid = metaFailures?.closest(".meta-grid");
-    const failuresCard = metaFailures?.closest(".meta-card");
-    if (metaGrid) metaGrid.style.display = "none";
-    if (failuresCard) {
-      failuresCard.id = "failuresSection";
-      failuresCard.style.marginTop = "12px";
-      failuresCard.style.marginBottom = "0";
-      panelResult.appendChild(failuresCard);
-    }
-
-    if (benchmarkMeta) {
-      benchmarkMeta.textContent = "";
-      benchmarkMeta.style.display = "none";
-    }
-
-    if (!$("riskBanner")) {
-      const banner = document.createElement("div");
-      banner.id = "riskBanner";
-      banner.className = "risk-banner hidden";
-      banner.innerHTML = `
-        <span class="risk-banner-icon"><img src="./icon-alert-warning.png" alt="" /></span>
-        <div class="risk-banner-text">
-          <div class="risk-banner-title" id="riskBannerTitle">-</div>
-          <div class="risk-banner-detail" id="riskBannerDetail">-</div>
-        </div>
-      `;
-      panelResult.insertBefore(banner, panelResult.firstElementChild);
-    }
-
-    if (!$("diagnosticSection")) {
-      const diag = document.createElement("div");
-      diag.id = "diagnosticSection";
-      diag.className = "diagnostic-grid";
-      diag.innerHTML = `
-        <div class="report-card">
-          <h3>종합 진단</h3>
-          <div id="diagnosisSummaryBox" class="empty-note">계산 후 표시됩니다.</div>
-        </div>
-        <div class="report-card">
-          <h3>재무 구조 요약</h3>
-          <div id="financialStructureBox" class="empty-note">계산 후 표시됩니다.</div>
-        </div>
-      `;
-      const first = panelResult.firstElementChild;
-      panelResult.insertBefore(diag, first);
-    }
-
-    if (!$("historySection")) {
-      const card = document.createElement("div");
-      card.id = "historySection";
-      card.className = "report-card";
-      card.style.marginBottom = "12px";
-      card.innerHTML = `
-        <div class="history-head"><div class="history-title-inline"><h3 style="margin:0;"><img src="./icon-trend-up.png" alt="" style="width:20px;height:20px;vertical-align:-4px;margin-right:6px;" />이전 기록</h3></div><div class="history-month-control"><button id="btnHistoryCalendar" class="history-calendar-btn" type="button" title="이전 기록 조회">🗓️</button><div id="historyMonthPopover" class="history-month-popover hidden"><div class="history-month-popover-head"><button id="btnHistoryPrevYear" class="history-month-nav-btn" type="button" aria-label="이전 연도">‹</button><div id="historyMonthPopoverYear" class="history-month-popover-year">2026</div><button id="btnHistoryNextYear" class="history-month-nav-btn" type="button" aria-label="다음 연도">›</button></div><div id="historyMonthPopoverGrid" class="history-month-popover-grid"></div><div class="history-month-popover-foot"><button id="btnHistoryClear" class="history-month-foot-btn" type="button">지우기</button><button id="btnHistoryThis" class="history-month-foot-btn primary" type="button">이번 달</button></div></div></div></div>
-        <div id="historyTrendWrap" style="margin-bottom:16px;">
-          <div id="historyTrendEmpty" class="empty-note">2개월 이상 기록이 쌓이면 추이 차트가 표시됩니다.</div>
-          <div id="historyTrendChartBox" style="height:220px; display:none;"><canvas id="historyTrendCanvas"></canvas></div>
-        </div>
-        <div id="historyCompareBox" class="empty-note">오른쪽 달력 버튼을 눌러 비교할 월을 선택해주세요.</div>
-      `;
-      panelResult.appendChild(card);
-    }
-
-    if (!$("chartSection")) {
-      const chartWrap = document.createElement("div");
-      chartWrap.id = "chartSection";
-      chartWrap.style.marginBottom = "12px";
-
-      const benchCard = document.createElement("div");
-      benchCard.className = "report-card";
-      benchCard.innerHTML = `
-        <h3><img src="./icon-chart-compare.png" alt="" style="width:20px;height:20px;vertical-align:-4px;margin-right:6px;" />핵심 Benchmark 비교</h3>
-        <div style="height:300px;"><canvas id="benchChartCanvas"></canvas></div>
-      `;
-
-      chartWrap.appendChild(benchCard);
-
-      const firstReportGrid = panelResult.querySelector(".report-grid");
-      if (firstReportGrid) {
-        panelResult.insertBefore(chartWrap, firstReportGrid);
-      } else {
-        panelResult.appendChild(chartWrap);
-      }
-    }
-
-    if (!$("riskSummaryBox")) {
-      const riskCard = reportRisk?.closest(".report-card");
-      if (riskCard) {
-        const box = document.createElement("div");
-        box.id = "riskSummaryBox";
-        box.style.marginBottom = "10px";
-        riskCard.insertBefore(box, reportRisk);
-      }
-    }
-
-    if (!$("actionProgressBox")) {
-      const actionsCard = reportActions?.closest(".report-card");
-      if (actionsCard) {
-        const box = document.createElement("div");
-        box.id = "actionProgressBox";
-        box.style.marginTop = "10px";
-        box.style.fontSize = "12px";
-        box.style.fontWeight = "900";
-        box.style.color = "rgba(11,18,32,.62)";
-        actionsCard.appendChild(box);
-      }
-    }
-
-    if (!$("benchmarkSummaryBox")) {
-      const benchCard = benchmarkMeta?.closest(".benchmark-card") || benchmarkMeta?.closest(".report-card");
-      if (benchCard && benchmarkMeta) {
-        const box = document.createElement("div");
-        box.id = "benchmarkSummaryBox";
-        box.style.margin = "10px 0 12px";
-        box.style.padding = "12px";
-        box.style.borderRadius = "14px";
-        box.style.background = "rgba(247,249,252,.9)";
-        box.style.border = "1px solid rgba(15,23,42,.08)";
-        benchmarkMeta.insertAdjacentElement("afterend", box);
-      }
-    }
-
-    if (!$("benchmarkToggleBtn")) {
-      const benchCard = benchmarkMeta?.closest(".benchmark-card") || benchmarkMeta?.closest(".report-card");
-      const h3 = benchCard?.querySelector("h3");
-      if (benchCard && h3) {
-        const bar = document.createElement("div");
-        bar.style.display = "flex";
-        bar.style.justifyContent = "space-between";
-        bar.style.alignItems = "center";
-        bar.style.gap = "10px";
-        h3.parentNode.insertBefore(bar, h3);
-        bar.appendChild(h3);
-
-        const wrap = document.createElement("div");
-        wrap.style.display = "flex";
-        wrap.style.gap = "8px";
-        wrap.style.alignItems = "center";
-
-        const btn = document.createElement("button");
-        btn.id = "benchmarkToggleBtn";
-        btn.type = "button";
-        btn.textContent = "전체 보기";
-        btn.style.border = "1px solid rgba(15,23,42,.12)";
-        btn.style.background = "rgba(255,255,255,.92)";
-        btn.style.borderRadius = "999px";
-        btn.style.padding = "8px 12px";
-        btn.style.fontWeight = "900";
-        btn.style.cursor = "pointer";
-        btn.addEventListener("click", () => {
-          benchShowAll = !benchShowAll;
-          btn.textContent = benchShowAll ? "핵심만 보기" : "전체 보기";
-          if (lastResponse) {
-            renderBenchmarks(lastResponse.analysis || {});
-            renderBenchmarkSummary(lastResponse.analysis || {});
-            renderBenchmarkChart(lastResponse.analysis || {});
-          }
-        });
-        wrap.appendChild(btn);
-
-        const pdfBtn = document.createElement("button");
-        pdfBtn.id = "btnExportPdf";
-        pdfBtn.type = "button";
-        pdfBtn.textContent = "PDF 저장";
-        pdfBtn.style.border = "none";
-        pdfBtn.style.background = "linear-gradient(135deg, #182459, #0E1638)";
-        pdfBtn.style.color = "#fff";
-        pdfBtn.style.borderRadius = "999px";
-        pdfBtn.style.padding = "8px 12px";
-        pdfBtn.style.fontWeight = "900";
-        pdfBtn.style.cursor = "pointer";
-        pdfBtn.addEventListener("click", () => exportPdfReport());
-        wrap.appendChild(pdfBtn);
-
-        bar.appendChild(wrap);
-      }
-    }
 
     if (!$("tsDashShell")) {
       const shell = document.createElement("div");
@@ -1271,24 +1028,22 @@
 
             <div id="dashHomeSummaryRow" class="ts-home-kpi-grid"></div>
 
+            <div id="dashAlertSettings" class="ts-alert-settings"></div>
+
             <div id="dashHomeAlert" class="ts-home-alert hidden">
               <div class="ts-home-alert-ic"><img src="./icon-dash-alert.png" alt="" /></div>
               <div>
                 <div class="ts-home-alert-title" id="dashHomeAlertTitle">-</div>
                 <div class="ts-home-alert-detail" id="dashHomeAlertDetail">-</div>
                 <div class="ts-home-alert-actions">
-                  <button class="ts-home-alert-btn solid" type="button" id="dashHomeAlertBtn">핵심 진단 보기 →</button>
+                  <button class="ts-home-alert-btn solid" type="button" id="dashHomeAlertBtn">상세 분석 보기 →</button>
                 </div>
               </div>
             </div>
 
-            <div class="report-card" id="dashCoreDiagCard">
-              <h3>핵심 진단</h3>
-              <div id="dashCoreDiagBody"></div>
-              <details class="ts-dash-details">
-                <summary>상세 Benchmark 보기</summary>
-                <div class="ts-dash-details-body" id="dashBenchDetailBody"></div>
-              </details>
+            <div class="report-card">
+              <h3>🎯 이번 달 목표</h3>
+              <div id="dashGoalBody"></div>
             </div>
 
             <div class="report-card">
@@ -1307,16 +1062,15 @@
               <div id="dashTodoList"></div>
             </div>
 
-            <div class="ts-dash-two-col">
-              <div class="report-card">
-                <h3>예상 세금</h3>
-                <div id="dashTaxSummary"></div>
-                <button class="ts-ledger-side-link" type="button" id="dashBtnGoTax" style="margin-top:12px;">세금 신고에서 자세히 보기 →</button>
-              </div>
-              <div class="report-card">
-                <h3>데이터 완성도</h3>
-                <div id="dashCompletenessBody"></div>
-              </div>
+            <div class="report-card">
+              <h3>예상 세금</h3>
+              <div id="dashTaxSummary"></div>
+              <button class="ts-ledger-side-link" type="button" id="dashBtnGoTax" style="margin-top:12px;">세금 신고에서 자세히 보기 →</button>
+            </div>
+
+            <div class="report-card">
+              <h3>데이터 완성도</h3>
+              <div id="dashCompletenessBody"></div>
             </div>
           </div>
 
@@ -1389,6 +1143,7 @@
           <div id="dashTaxView" class="hidden">
             <div class="ts-dash-header">
               <div><h2>세금 신고</h2></div>
+              <button class="ts-ledger-quick-btn primary" type="button" id="taxBtnPdf">홈택스 참고서식 PDF</button>
             </div>
 
             <div class="ts-ledger-summary" id="taxSummaryLine"></div>
@@ -1409,6 +1164,11 @@
             <div class="report-card">
               <h3>신고 전 확인이 필요해요</h3>
               <div id="taxReviewList"></div>
+            </div>
+
+            <div class="report-card">
+              <h3>간이과세자 ↔ 일반과세자 비교</h3>
+              <div id="taxTypeSimBox"></div>
             </div>
 
             <div class="ts-dash-two-col">
@@ -1454,7 +1214,10 @@
             </div>
 
             <div class="report-card">
-              <h3>놓친 증빙 찾기</h3>
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+                <h3 style="margin:0;">놓친 증빙 찾기</h3>
+                <button class="ts-card-link" type="button" id="saveEvidenceReminderBtn">🔔 알림 받기</button>
+              </div>
               <div id="saveEvidenceList"></div>
             </div>
 
@@ -1478,18 +1241,12 @@
               <div><h2>경영 리포트</h2><p>이번 달 우리 가게의 성적과 다음 달 개선 포인트를 한눈에 확인하세요.</p></div>
               <div style="display:flex; align-items:center; gap:8px;">
                 <div id="reportDateBadge" class="ts-dash-date-badge">-</div>
+                <button class="ts-ledger-quick-btn" type="button" id="reportBtnCsv">CSV 다운로드</button>
                 <button class="ts-ledger-quick-btn primary" type="button" id="reportBtnPdf">PDF 저장</button>
               </div>
             </div>
 
             <div class="report-card ts-report-headline" id="reportHeadlineCard"></div>
-
-            <div id="reportKpiRow" class="ts-dash-kpi-grid"></div>
-
-            <div class="report-card">
-              <h3>TS 경영 건강도</h3>
-              <div id="reportHealthBox"></div>
-            </div>
 
             <div class="report-card">
               <h3>전월 대비 변화</h3>
@@ -1507,23 +1264,6 @@
               <div id="reportBenchTable"></div>
             </div>
 
-            <div class="ts-dash-two-col">
-              <div class="report-card">
-                <h3>이번 달 잘한 점</h3>
-                <div id="reportGoodList"></div>
-              </div>
-              <div class="report-card">
-                <h3>지금 가장 신경 써야 할 것</h3>
-                <div id="reportIssueList"></div>
-              </div>
-            </div>
-
-            <div class="report-card">
-              <h3>이번 달 발견한 기회</h3>
-              <div id="reportOppRow" class="ts-home-opp-row"></div>
-              <button class="ts-ledger-side-link" type="button" id="reportBtnGoSave" style="margin-top:12px;">절세 도우미에서 자세히 보기 →</button>
-            </div>
-
             <div class="report-card">
               <h3>개선 시뮬레이션</h3>
               <div id="reportSimBox"></div>
@@ -1532,11 +1272,6 @@
             <div class="report-card">
               <h3>다음 달 목표</h3>
               <div id="reportGoalList"></div>
-            </div>
-
-            <div class="report-card">
-              <h3>이번 달 실행 과제</h3>
-              <div id="reportActionList"></div>
             </div>
 
             <div class="report-card">
@@ -1554,22 +1289,10 @@
           </div>
         </div>
       `;
-      panelResult.insertBefore(shell, panelResult.firstElementChild);
+      panelResult.appendChild(shell);
 
       const main = $("tsDashMain");
       const homeView = $("dashHomeView");
-
-      const benchCardEl = document.querySelector(".benchmark-card");
-      const benchDetailBody = $("dashBenchDetailBody");
-      if (benchDetailBody && benchCardEl) benchDetailBody.appendChild(benchCardEl);
-
-      const legacyBucket = document.createElement("div");
-      legacyBucket.id = "tsLegacyHidden";
-      legacyBucket.style.display = "none";
-      Array.from(panelResult.children)
-        .filter((el) => el !== shell && el !== legacyBucket)
-        .forEach((el) => legacyBucket.appendChild(el));
-      panelResult.appendChild(legacyBucket);
 
       const ledgerView = $("dashLedgerView");
       const taxView = $("dashTaxView");
@@ -1599,7 +1322,9 @@
       });
 
       $("reportBtnPdf")?.addEventListener("click", () => exportPdfReport());
-      $("reportBtnGoSave")?.addEventListener("click", () => goDashNav("save"));
+      $("taxBtnPdf")?.addEventListener("click", () => exportTaxFilingPdf());
+      $("saveEvidenceReminderBtn")?.addEventListener("click", () => toggleEvidenceReminder());
+      $("reportBtnCsv")?.addEventListener("click", () => exportReportCsv());
       $("reportTrendTabs")?.querySelectorAll("[data-metric]").forEach((btn) => {
         btn.addEventListener("click", () => {
           $("reportTrendTabs").querySelectorAll("[data-metric]").forEach((b) => b.classList.toggle("active", b === btn));
@@ -1607,9 +1332,7 @@
         });
       });
 
-      $("dashHomeAlertBtn")?.addEventListener("click", () => {
-        $("dashCoreDiagCard")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
+      $("dashHomeAlertBtn")?.addEventListener("click", () => goDashNav("report"));
       $("dashBtnGoTax")?.addEventListener("click", () => goDashNav("tax"));
     }
   }
@@ -1687,352 +1410,6 @@
     };
   }
 
-  function renderDiagnosis(resp) {
-    const box = $("diagnosisSummaryBox");
-    if (!box) return;
-
-    const analysis = resp?.analysis || {};
-    const kpi = resp?.kpi || {};
-    const meta = resp?.meta || {};
-    const riskDrivers = Array.isArray(analysis?.risk?.drivers) ? analysis.risk.drivers : [];
-    const v = getMonthlyValuesFromResponse(resp);
-    const bench = analyzeBenchmarkHighlights(analysis);
-    const hasBenchmark = Array.isArray(analysis?.benchmarks?.items) && analysis.benchmarks.items.length > 0;
-
-    const sentences = [];
-    const highOutlier = v.profitRatio <= -1 || v.totalCostRatio >= 2 || v.laborRatio >= 1;
-    const seriousRisk = v.profitRatio < 0 || v.totalCostRatio >= 1 || v.laborRatio >= 0.4 || riskDrivers.length > 0;
-
-    sentences.push(
-      `종합점수 ${escapeHtml(kpi?.score_100 ?? "-")}점 · ${escapeHtml(kpi?.grade || "-")}등급 · ${escapeHtml(gradeTone(kpi?.grade))}`
-    );
-
-    if (highOutlier) {
-      sentences.push(`수익 구조 매우 불안정 · 입력값 확인 필요`);
-    } else if (v.profitRatio >= 0.15) {
-      sentences.push(`월 추정 이익률 ${ratioToPercent(v.profitRatio)} · 안정적`);
-    } else if (v.profitRatio >= 0.05) {
-      sentences.push(`월 추정 이익률 ${ratioToPercent(v.profitRatio)} · 비용 구조 개선 여지`);
-    } else if (v.profitRatio >= 0) {
-      sentences.push(`월 추정 이익률 ${ratioToPercent(v.profitRatio)} · 낮음, 비용 통제 필요`);
-    } else {
-      sentences.push(`월 추정 이익률 ${ratioToPercent(v.profitRatio)} · 적자, 즉시 점검 필요`);
-    }
-
-    if (v.totalCostRatio >= 1) {
-      sentences.push(`총비용 ${ratioToPercent(v.totalCostRatio)} · 매출 초과`);
-    } else if (v.totalCostRatio >= 0.85) {
-      sentences.push(`총비용 ${ratioToPercent(v.totalCostRatio)} · 부담 확대`);
-    }
-
-    if (v.laborRatio >= 1) {
-      sentences.push(`인건비 ${ratioToPercent(v.laborRatio)} · 입력값 확인 필요`);
-    } else if (v.laborRatio >= 0.4) {
-      sentences.push(`인건비 ${ratioToPercent(v.laborRatio)} · 부담`);
-    }
-
-    if (bench.worst) {
-      sentences.push(`최대 편차: ${metricLabel(bench.worst.metric)} ${ppText(bench.worst.diff_pp)}`);
-    } else if (!hasBenchmark && seriousRisk) {
-      sentences.push(`벤치마크 없음 · 입력값 기준 고위험 신호`);
-    } else if (!hasBenchmark) {
-      sentences.push(`벤치마크 데이터 없음`);
-    }
-
-    if (riskDrivers.length >= 3) {
-      sentences.push(`핵심 리스크 ${riskDrivers.length}건 · 우선순위 액션 필요`);
-    } else if (riskDrivers.length >= 1) {
-      sentences.push(`핵심 리스크 ${riskDrivers.length}건`);
-    } else if (seriousRisk) {
-      sentences.push(`즉시 점검 필요 신호 있음`);
-    } else {
-      sentences.push(`이상 징후 크지 않음`);
-    }
-
-    sentences.push(`${confidenceText(meta?.confidence)}`);
-
-    box.innerHTML = `
-      <div class="block-sub" style="margin-bottom:10px; font-size:17px;">한눈에 보는 현재 상태</div>
-      <div style="display:grid; gap:10px;">
-        ${sentences.map((s) => `<div class="risk-block"><div class="block-sub" style="font-size:15px; line-height:1.6;">${escapeHtml(s)}</div></div>`).join("")}
-      </div>
-    `;
-  }
-
-  function renderFinancialStructure(resp) {
-    const box = $("financialStructureBox");
-    if (!box) return;
-
-    const v = getMonthlyValuesFromResponse(resp);
-    const segments = [
-      { label: "원 비용", ratio: v.costRatio, amount: v.cost, icon: "₩", bg: "#ecd17a", chart: "#4C7BF0" },
-      { label: "원 인건비", ratio: v.laborRatio, amount: v.labor, icon: "인", bg: "#efb2be", chart: "#EF6C86" },
-      { label: "원 추정 이익", ratio: v.profitRatio, amount: v.profit, icon: "수", bg: "#c7d7ff", chart: "#F2B84B" }
-    ];
-
-    box.innerHTML = `
-      <div class="financial-summary-card">
-        <div class="financial-total-label">총 매출</div>
-        <div class="financial-total-value">${formatWon(v.revenue)}원</div>
-        <div class="financial-donut-row">
-          <div class="financial-donut-wrap">
-            <canvas id="financialDonutCanvas"></canvas>
-            <div class="financial-donut-center">
-              <div class="financial-donut-center-label">매출 구성</div>
-              <div class="financial-donut-center-value">100%</div>
-            </div>
-          </div>
-          <div class="financial-legend">
-            ${segments.map((item) => `
-              <div class="financial-legend-row">
-                <span class="financial-legend-dot" style="background:${item.chart};"></span>
-                <span>${escapeHtml(item.label)} ${ratioToPercent(item.ratio)}</span>
-              </div>
-            `).join("")}
-          </div>
-        </div>
-        <div class="financial-list">
-          ${segments.map((item) => `
-            <div class="financial-item">
-              <div class="financial-icon" style="background:${item.bg};">${item.icon}</div>
-              <div>
-                <div class="financial-label">${escapeHtml(item.label)}</div>
-                <div class="financial-sub">매출 대비 ${ratioToPercent(item.ratio)}</div>
-              </div>
-              <div class="financial-amount">${formatWon(item.amount)}원</div>
-            </div>
-          `).join("")}
-        </div>
-        <div class="financial-comment">ⓘ 수치는 입력값 기준 추정치입니다.</div>
-      </div>
-    `;
-
-    const canvas = $("financialDonutCanvas");
-    if (financialChart) {
-      financialChart.destroy();
-      financialChart = null;
-    }
-    if (canvas && typeof Chart !== "undefined") {
-      financialChart = new Chart(canvas, {
-        type: "doughnut",
-        data: {
-          labels: segments.map((s) => s.label),
-          datasets: [{
-            data: segments.map((s) => Math.max(0, s.ratio * 100)),
-            backgroundColor: segments.map((s) => s.chart),
-            borderWidth: 2,
-            borderColor: "#ffffff"
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          cutout: "72%",
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: "rgba(15,23,42,0.92)",
-              padding: 10,
-              cornerRadius: 10,
-              callbacks: {
-                label: (context) => `${context.label}: ${context.formattedValue}%`
-              }
-            }
-          }
-        }
-      });
-    }
-  }
-
-  function renderExecutive(analysis) {
-  const exec = analysis?.executive_summary;
-  if (!exec || !Array.isArray(exec.summary) || exec.summary.length === 0) {
-    reportExecutive.innerHTML = `<div class="empty-note">요약 리포트가 아직 없습니다.</div>`;
-    return;
-  }
-
-  const headline = exec.headline ? `<div class="block-title">${escapeHtml(exec.headline)}</div>` : "";
-
-  const filteredSummary = exec.summary.filter(
-    (x) => !String(x || "").includes("공식 benchmark 비교를 수행했습니다")
-  );
-
-  const items = filteredSummary.map((x) => `<li>${escapeHtml(x)}</li>`).join("");
-
-  reportExecutive.innerHTML = `${headline}<ul class="report-list">${items}</ul>`;
-}
-
-  function renderTaxBrief(analysis) {
-    const tb = analysis?.tax_brief;
-    if (!tb) {
-      reportTaxBrief.innerHTML = `<div class="empty-note">세금 브리프가 아직 없습니다.</div>`;
-      const signalBox = $("taxSignalBox");
-      if (signalBox) signalBox.innerHTML = "";
-      return;
-    }
-
-    const vatMonth = Number(tb?.vat?.due_month || 0);
-    const vatYear = Number(tb?.vat?.due_year || 0);
-    const incomeYear = Number(tb?.income_tax?.due_year || 0);
-    const insuranceYear = Number(tb?.insurance?.employer_year || 0);
-    reportTaxBrief.innerHTML = `
-      <div class="brief-item">
-        <div class="brief-k">월 부가세 추정</div>
-        <div class="brief-v">${formatWon(vatMonth)}원</div>
-      </div>
-      <div class="brief-item">
-        <div class="brief-k">연 부가세/납부 추정</div>
-        <div class="brief-v">${formatWon(vatYear)}원</div>
-      </div>
-      <div class="brief-item">
-        <div class="brief-k">연 소득세+지방세 추정</div>
-        <div class="brief-v">${formatWon(incomeYear)}원</div>
-      </div>
-      <div class="brief-item">
-        <div class="brief-k">연 4대보험 사업주부담 추정</div>
-        <div class="brief-v">${formatWon(insuranceYear)}원</div>
-      </div>
-    `;
-
-    renderTaxSignals(lastResponse || {});
-  }
-
-  function renderTaxSignals(resp) {
-    const signalBox = $("taxSignalBox");
-    if (!signalBox) return;
-
-    const analysis = resp?.analysis || {};
-    const tb = analysis?.tax_brief || {};
-
-    const annualRevenue = safeNumber(resp?.result?.annualized?.revenue_vat_included || 0);
-    const vatYear = safeNumber(tb?.vat?.due_year || 0);
-    const incomeYear = safeNumber(tb?.income_tax?.due_year || 0);
-    const insuranceYear = safeNumber(tb?.insurance?.employer_year || 0);
-    const totalTaxBurden = vatYear + incomeYear + insuranceYear;
-
-    if (!annualRevenue || annualRevenue <= 0) {
-      signalBox.innerHTML = `<div class="empty-note">세금 부담 해석 정보가 아직 없습니다.</div>`;
-      return;
-    }
-
-    const totalRatio = totalTaxBurden / annualRevenue;
-
-    let tone = "관리 가능한 수준";
-    if (totalRatio >= 0.18) tone = "부담 큼 · 납부 일정 관리 필요";
-    else if (totalRatio >= 0.12) tone = "적지 않음 · 자금 계획 권장";
-
-    signalBox.innerHTML = `
-      <div class="brief-item">
-        <div class="brief-k">연 부가세 추정</div>
-        <div class="brief-v">${formatWon(vatYear)}원</div>
-      </div>
-      <div class="brief-item">
-        <div class="brief-k">연 소득세+지방세 추정</div>
-        <div class="brief-v">${formatWon(incomeYear)}원</div>
-      </div>
-      <div class="brief-item">
-        <div class="brief-k">연 사업주 보험부담 추정</div>
-        <div class="brief-v">${formatWon(insuranceYear)}원</div>
-      </div>
-      <div class="brief-item">
-        <div class="brief-k">연 총 세부담 추정</div>
-        <div class="brief-v">${formatWon(totalTaxBurden)}원</div>
-      </div>
-      <div class="block-sub" style="margin-top:8px;">${escapeHtml(tone)}</div>
-    `;
-  }
-
-  function renderRisk(analysis) {
-    const drivers = analysis?.risk?.drivers;
-    const riskSummaryBox = $("riskSummaryBox");
-    const v = getMonthlyValuesFromResponse(lastResponse || {});
-
-    if (!Array.isArray(drivers) || drivers.length === 0) {
-      const fallback = [];
-      if (v.profitRatio < 0) fallback.push({ title: "적자 구조 리스크", detail: `월 추정 이익률이 ${ratioToPercent(v.profitRatio)}로 음수입니다. 비용 구조를 다시 확인해 주세요.` });
-      if (v.totalCostRatio >= 1) fallback.push({ title: "총비용 과다 리스크", detail: `총비용이 매출의 ${ratioToPercent(v.totalCostRatio)} 수준으로 계산되었습니다.` });
-      if (v.laborRatio >= 0.4) fallback.push({ title: "인건비 부담 리스크", detail: `인건비가 매출의 ${ratioToPercent(v.laborRatio)}로 높게 나타났습니다.` });
-
-      if (fallback.length === 0) {
-        if (riskSummaryBox) {
-          riskSummaryBox.innerHTML = `<div class="block-sub">현재 입력 기준 주요 리스크 없음</div>`;
-        }
-        reportRisk.innerHTML = `<div class="empty-note">현재 입력 기준으로 주요 리스크가 감지되지 않았습니다.</div>`;
-        return;
-      }
-
-      if (riskSummaryBox) {
-        riskSummaryBox.innerHTML = `
-          <div class="brief-item">
-            <div class="brief-k">감지 리스크 수</div>
-            <div class="brief-v">${fallback.length}건</div>
-          </div>
-          <div class="brief-item">
-            <div class="brief-k">중점 확인 필요</div>
-            <div class="brief-v">${fallback.length}건</div>
-          </div>
-          <div class="block-sub" style="margin-top:8px;">가장 먼저 볼 항목: ${escapeHtml(fallback[0].title)}</div>
-        `;
-      }
-
-      reportRisk.innerHTML = fallback.map((d) => `
-        <div class="risk-block">
-          <div class="block-title">${escapeHtml(d.title)}</div>
-          <div class="block-sub">${escapeHtml(d.detail)}</div>
-        </div>
-      `).join("");
-      return;
-    }
-
-    const highCount = drivers.filter((d) => {
-      const txt = `${d?.title || ""} ${d?.detail || ""}`.toLowerCase();
-      return txt.includes("즉시") || txt.includes("높") || txt.includes("위험") || txt.includes("리스크") || txt.includes("확인 필요");
-    }).length;
-
-    if (riskSummaryBox) {
-      const top = drivers[0];
-      riskSummaryBox.innerHTML = `
-        <div class="brief-item">
-          <div class="brief-k">감지 리스크 수</div>
-          <div class="brief-v">${drivers.length}건</div>
-        </div>
-        <div class="brief-item">
-          <div class="brief-k">중점 확인 필요</div>
-          <div class="brief-v">${highCount}건</div>
-        </div>
-        <div class="block-sub" style="margin-top:8px;">
-          가장 먼저 볼 항목: ${escapeHtml(top?.title || top?.code || "리스크")}
-        </div>
-      `;
-    }
-
-    reportRisk.innerHTML = drivers.map((d) => `
-      <div class="risk-block">
-        <div class="block-title">${escapeHtml(d?.title || d?.code || "리스크")}</div>
-        <div class="block-sub">${escapeHtml(d?.detail || "-")}</div>
-      </div>
-    `).join("");
-  }
-
-  function renderRiskBanner(analysis) {
-    const banner = $("riskBanner");
-    if (!banner) return;
-
-    const bench = analyzeBenchmarkHighlights(analysis);
-    const worst = bench.worst;
-
-    if (!worst) {
-      banner.classList.add("hidden");
-      return;
-    }
-
-    const titleEl = $("riskBannerTitle");
-    const detailEl = $("riskBannerDetail");
-    if (titleEl) titleEl.textContent = `가장 시급한 문제: ${metricLabel(worst.metric)} ${ratioToPercent(worst.my_value)}`;
-    if (detailEl) detailEl.textContent = `중앙값 대비 ${ppText(worst.diff_pp)} · 우선 점검이 필요합니다.`;
-    banner.classList.remove("hidden");
-  }
-
   function getActionCheckState() {
     try {
       return JSON.parse(localStorage.getItem(LS_ACTION_CHECK_KEY) || "{}");
@@ -2077,379 +1454,22 @@
     progress.textContent = `실행 체크리스트 진행률: ${done}/${all.length}`;
   }
 
-  function renderActions(analysis) {
-    const actions = analysis?.actions;
-    const actionSummaryBox = $("actionSummaryBox");
-
-    if (!Array.isArray(actions) || actions.length === 0) {
-      if (actionSummaryBox) {
-        actionSummaryBox.innerHTML = `<div class="block-sub">현재 규칙 기준 실행 액션 없음</div>`;
-      }
-      reportActions.innerHTML = `<div class="empty-note">현재 규칙 기준으로 우선 실행 액션이 없습니다.</div>`;
-      updateActionProgress();
-      return;
-    }
-
-    const p1 = actions.filter((a) => String(a?.priority || "").toUpperCase() === "P1").length;
-    const p2 = actions.filter((a) => String(a?.priority || "").toUpperCase() === "P2").length;
-    const p3 = actions.filter((a) => String(a?.priority || "").toUpperCase() === "P3").length;
-    const top = actions[0];
-
-    if (actionSummaryBox) {
-      actionSummaryBox.innerHTML = `
-        <div class="action-stat-grid">
-          <div class="action-stat-tile">
-            <div class="action-stat-icon">📌</div>
-            <div class="action-stat-value">${p1}건</div>
-            <div class="action-stat-label">추천 실행</div>
-          </div>
-          <div class="action-stat-tile">
-            <div class="action-stat-icon">⚡</div>
-            <div class="action-stat-value">${p2}건</div>
-            <div class="action-stat-label">즉시 개선</div>
-          </div>
-          <div class="action-stat-tile">
-            <div class="action-stat-icon">🗂️</div>
-            <div class="action-stat-value">${p3}건</div>
-            <div class="action-stat-label">관리 과제</div>
-          </div>
-        </div>
-      `;
-    }
-
-    const state = getActionCheckState();
-    const deadlineTag = { P1: "7일", P2: "30일", P3: "90일" };
-
-    const how = Array.isArray(top?.how) ? top.how : [];
-    const key = actionKey(top);
-    const priority = String(top?.priority || "P?").toUpperCase();
-    const howHtml = how.length
-      ? `<ul class="mini-list">${how.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul>`
-      : `<div class="block-sub">실행 방법 정보 없음</div>`;
-
-    reportActions.innerHTML = `
-      <div class="top-action-card">
-        <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
-          <input type="checkbox" data-action-key="${escapeHtml(key)}" ${state[key] ? "checked" : ""} style="margin-top:3px;" />
-          <div style="flex:1;">
-            <span class="top-action-tag">[${escapeHtml(deadlineTag[priority] || "확인")}]</span>
-            <span class="block-title">${escapeHtml(top?.title || "액션")}</span>
-            <div class="block-sub" style="margin-top:6px;">${escapeHtml(top?.why || "-")}</div>
-            ${howHtml}
-          </div>
-        </label>
-      </div>
-    `;
-
-    bindActionCheckboxes();
-  }
-
-  function renderKpiCards(analysis) {
-    const items = Array.isArray(analysis?.kpi_cards) ? analysis.kpi_cards : [];
-    if (items.length === 0) {
-      kpiCardsWrap.innerHTML = `
-        <div class="report-card" style="grid-column:1/-1;">
-          <div class="empty-note">KPI 카드가 아직 없습니다.</div>
-        </div>
-      `;
-      return;
-    }
-
-    const badgeClass = (level) => {
-      const v = String(level || "").toUpperCase();
-      if (v === "GOOD") return "kpi-badge kpi-good";
-      if (v === "WARN") return "kpi-badge kpi-warn";
-      if (v === "RISK") return "kpi-badge kpi-risk";
-      return "kpi-badge kpi-unknown";
-    };
-
-    const valueText = (item) => {
-      if (item?.unit === "ratio") return ratioToPercent(item?.value);
-      return String(item?.value ?? "-");
-    };
-
-    const commentText = (item) => {
-      const metric = String(item?.code || "").toUpperCase();
-      const raw = String(item?.comment || "").trim();
-      if (!raw) return "-";
-      if (
-        ["MARGIN_RATIO", "TAX_BURDEN_RATIO"].includes(metric) &&
-        raw.includes("공식 benchmark 데이터가 아직 연결되지 않아 현재 값만 표시합니다.")
-      ) {
-        return "";
-      }
-      return raw;
-    };
-
-    kpiCardsWrap.innerHTML = items.map((item) => `
-      <div class="kpi-card">
-        <div class="${badgeClass(item?.level)}">${escapeHtml(item?.level || "UNKNOWN")}</div>
-        <div class="kpi-label">${escapeHtml(item?.label || item?.code || "KPI")}</div>
-        <div class="kpi-value">${escapeHtml(valueText(item))}</div>
-        <div class="kpi-comment">${escapeHtml(commentText(item))}</div>
-      </div>
-    `).join("");
-  }
-
-  function filteredBenchItems(items) {
-    if (benchShowAll) return items;
-    const core = ["COST_RATIO", "LABOR_RATIO", "MATERIAL_RATIO", "RENT_RATIO", "PROFIT_RATIO"];
-    return items.filter((x) => core.includes(String(x?.metric || "")));
-  }
-
-  function renderBenchmarks(analysis) {
-    const block = analysis?.benchmarks || {};
-    const rawItems = Array.isArray(block?.items) ? block.items : [];
-    const items = filteredBenchItems(rawItems);
-    const v = getMonthlyValuesFromResponse(lastResponse || {});
-
-    if (benchmarkMeta) {
-      benchmarkMeta.textContent = "";
-      benchmarkMeta.style.display = "none";
-    }
-
-    if (items.length === 0) {
-      const reason = (v.profitRatio <= -1 || v.totalCostRatio >= 2 || v.laborRatio >= 1)
-        ? "입력값이 일반적인 범위를 크게 벗어나 공식 비교가 제한되었을 가능성이 있습니다."
-        : "현재 업종·지역·매출구간 조합에 해당하는 공식 비교 데이터가 아직 충분하지 않습니다.";
-      benchmarkTableBody.innerHTML = `
-        <tr>
-          <td>공식 벤치마크 비교</td>
-          <td colspan="6" class="empty-note" style="padding:14px; text-align:left;">
-            제공되지 않음 · ${escapeHtml(reason)}<br>
-            현재는 입력값 절대 기준 리스크 진단을 우선 제공합니다.
-          </td>
-        </tr>
-      `;
-      return;
-    }
-
-    benchmarkTableBody.innerHTML = items.map((item) => {
-      const isRevenueMetric = String(item?.metric || "") === "AVG_REVENUE_ANNUAL";
-      const valueCell = isRevenueMetric ? formatWon(item?.my_value || 0) + "원" : ratioToPercent(item?.my_value);
-      const p50Cell = isRevenueMetric ? (item?.p50 != null ? `${formatWon(item.p50)}원` : "-") : ratioToPercent(item?.p50);
-      const p25Cell = isRevenueMetric ? (item?.p25 != null ? `${formatWon(item.p25)}원` : "-") : ratioToPercent(item?.p25);
-      const p75Cell = isRevenueMetric ? (item?.p75 != null ? `${formatWon(item.p75)}원` : "-") : ratioToPercent(item?.p75);
-      const diffCell = isRevenueMetric ? "-" : ppText(item?.diff_pp);
-
-      return `
-        <tr>
-          <td>${escapeHtml(metricLabel(item?.metric))}</td>
-          <td>${escapeHtml(valueCell)}</td>
-          <td>${escapeHtml(p50Cell)}</td>
-          <td>${escapeHtml(p75Cell)}</td>
-          <td>${escapeHtml(p25Cell)}</td>
-          <td>${escapeHtml(diffCell)}</td>
-          <td><span class="${levelChipClass(item?.level)}">${escapeHtml(item?.level || "UNKNOWN")}</span></td>
-        </tr>
-      `;
-    }).join("");
-  }
-
-  function renderBenchmarkSummary(analysis) {
-    const box = $("benchmarkSummaryBox");
-    if (!box) return;
-
-    const items = Array.isArray(analysis?.benchmarks?.items) ? analysis.benchmarks.items : [];
-    const core = filteredBenchItems(items).filter((x) => Number.isFinite(Number(x?.diff_pp)));
-    const v = getMonthlyValuesFromResponse(lastResponse || {});
-
-    if (core.length === 0) {
-      const seriousRisk = v.profitRatio < 0 || v.totalCostRatio >= 1 || v.laborRatio >= 0.4;
-      box.innerHTML = `
-        <div class="block-title" style="margin-bottom:8px;">벤치마크 해석</div>
-        <ul class="report-list">
-          <li>공식 벤치마크 비교는 제공되지 않았습니다.</li>
-          <li>${escapeHtml(seriousRisk ? "다만 현재 입력값만으로도 적자 구조·비용 과다·인건비 부담 여부를 우선 해석할 수 있습니다." : "현재는 입력값 기준 해석을 우선 제공하며, 공식 데이터가 연결되면 비교 분석이 강화됩니다.")}</li>
-        </ul>
-      `;
-      return;
-    }
-
-    const riskItems = core
-      .filter((x) => String(x?.level || "").toUpperCase() === "RISK")
-      .sort((a, b) => Math.abs(Number(b?.diff_pp || 0)) - Math.abs(Number(a?.diff_pp || 0)));
-
-    const warnItems = core
-      .filter((x) => String(x?.level || "").toUpperCase() === "WARN")
-      .sort((a, b) => Math.abs(Number(b?.diff_pp || 0)) - Math.abs(Number(a?.diff_pp || 0)));
-
-    const goodItems = core
-      .filter((x) => String(x?.level || "").toUpperCase() === "GOOD")
-      .sort((a, b) => Math.abs(Number(b?.diff_pp || 0)) - Math.abs(Number(a?.diff_pp || 0)));
-
-    const lines = [];
-
-    if (riskItems[0]) {
-      lines.push(`우선 점검: ${metricLabel(riskItems[0].metric)} · 평균 대비 ${ppText(riskItems[0].diff_pp)}`);
-    } else if (warnItems[0]) {
-      lines.push(`${metricLabel(warnItems[0].metric)} 추가 관찰 필요, 그 외 평균 부근`);
-    } else {
-      lines.push(`핵심 지표 안정적`);
-    }
-
-    if (goodItems[0]) {
-      lines.push(`강점: ${metricLabel(goodItems[0].metric)}`);
-    }
-
-    lines.push(`GOOD ${goodItems.length} · WARN ${warnItems.length} · RISK ${riskItems.length}`);
-
-    box.innerHTML = `
-      <div class="block-title" style="margin-bottom:8px;">벤치마크 해석</div>
-      <ul class="report-list">
-        ${lines.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}
-      </ul>
-    `;
-  }
-
-  function renderMeta(resp) {
-    const meta = resp?.meta || {};
-    const failures = Array.isArray(meta?.partial_failures) ? meta.partial_failures : [];
-
-    if (metaAssumptions) metaAssumptions.innerHTML = "";
-
-    metaFailures.innerHTML = failures.length
-      ? failures.map((f) => `
-          <div class="risk-block">
-            <div class="block-title">${escapeHtml(f?.code || "PARTIAL_FAILURE")}</div>
-            <div class="block-sub">${escapeHtml(f?.message || "-")}</div>
-            ${f?.detail ? `<ul class="mini-list"><li>${escapeHtml(f.detail)}</li></ul>` : ""}
-          </div>
-        `).join("")
-      : `<div class="empty-note">제한사항 / 부분 실패 없음</div>`;
-  }
-
-  function destroyCharts() {
-    if (benchChart) {
-      benchChart.destroy();
-      benchChart = null;
-    }
-  }
-
-  function renderBenchmarkChart(analysis) {
-    const canvas = $("benchChartCanvas");
-    if (!canvas || typeof Chart === "undefined") return;
-
-    const raw = Array.isArray(analysis?.benchmarks?.items) ? analysis.benchmarks.items : [];
-    const core = raw.filter((x) =>
-      ["COST_RATIO", "LABOR_RATIO", "MATERIAL_RATIO", "RENT_RATIO", "PROFIT_RATIO"].includes(String(x?.metric || ""))
-    );
-
-    if (core.length === 0) return;
-
-    benchChart = new Chart(canvas, {
-      type: "bar",
-      data: {
-        labels: core.map((x) => metricLabel(x?.metric)),
-        datasets: [
-          {
-            label: "우리 매장",
-            data: core.map((x) => Number(x?.my_value || 0) * 100),
-            backgroundColor: "#1A6DFF",
-            hoverBackgroundColor: "#3B82F6",
-            borderColor: "#0F4FD6",
-            borderWidth: 1,
-            borderRadius: 8,
-            borderSkipped: false,
-            maxBarThickness: 42
-          },
-          {
-            label: "업종 평균",
-            data: core.map((x) => Number(x?.p50 || 0) * 100),
-            backgroundColor: "#C7D7FA",
-            hoverBackgroundColor: "#D8E4FC",
-            borderColor: "#AEC2F2",
-            borderWidth: 1,
-            borderRadius: 8,
-            borderSkipped: false,
-            maxBarThickness: 42
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: {
-          mode: "index",
-          intersect: false
-        },
-        animation: {
-          duration: 700,
-          easing: "easeOutQuart"
-        },
-        plugins: {
-          legend: {
-            display: true,
-            labels: {
-              usePointStyle: true,
-              pointStyle: "rectRounded",
-              padding: 16,
-              color: "rgba(11,18,32,.72)",
-              font: {
-                weight: "700"
-              }
-            }
-          },
-          tooltip: {
-            backgroundColor: "rgba(15,23,42,0.92)",
-            titleColor: "#ffffff",
-            bodyColor: "#e5e7eb",
-            padding: 12,
-            cornerRadius: 12,
-            displayColors: true,
-            callbacks: {
-              label: (context) => `${context.dataset.label}: ${context.formattedValue}%`
-            }
-          }
-        },
-        scales: {
-          x: {
-            grid: {
-              display: false,
-              drawBorder: false
-            },
-            ticks: {
-              color: "rgba(11,18,32,.72)",
-              font: {
-                weight: "700"
-              }
-            }
-          },
-          y: {
-            beginAtZero: true,
-            grid: {
-              color: "rgba(15,23,42,.08)",
-              drawBorder: false
-            },
-            ticks: {
-              color: "rgba(11,18,32,.58)",
-              callback: (value) => `${value}%`
-            }
-          }
-        }
-      }
-    });
-  }
-
-  function renderCharts(analysis) {
-    destroyCharts();
-    renderBenchmarkChart(analysis);
-  }
-
-  function buildPdfHtml(resp) {
+  function buildPdfHtml(resp, v2Data) {
     const analysis = resp?.analysis || {};
     const meta = resp?.meta || {};
     const assumptions = Array.isArray(meta?.assumptions) ? meta.assumptions : [];
     const failures = Array.isArray(meta?.partial_failures) ? meta.partial_failures : [];
-    const kpis = Array.isArray(analysis?.kpi_cards) ? analysis.kpi_cards : [];
     const bench = Array.isArray(analysis?.benchmarks?.items) ? analysis.benchmarks.items : [];
-    const risks = Array.isArray(analysis?.risk?.drivers) ? analysis.risk.drivers : [];
-    const actions = Array.isArray(analysis?.actions) ? analysis.actions : [];
-    const exec = Array.isArray(analysis?.executive_summary?.summary) ? analysis.executive_summary.summary : [];
     const tax = analysis?.tax_brief || {};
     const v = getMonthlyValuesFromResponse(resp);
     const kpi = resp?.kpi || {};
     const worst = analyzeBenchmarkHighlights(analysis).worst;
+
+    const opportunities = Array.isArray(v2Data?.opportunities) ? v2Data.opportunities : [];
+    const scenarioOptions = Array.isArray(v2Data?.scenarios?.options) ? v2Data.scenarios.options : [];
+    const scenarioReco = v2Data?.scenarios?.recommendation_text || "";
+    const monthly = Array.isArray(v2Data?.monthly) ? v2Data.monthly : [];
+    const latestMonth = monthly.length ? monthly[monthly.length - 1] : null;
 
     const levelColor = (level) => {
       const lv = String(level || "").toUpperCase();
@@ -2484,18 +1504,20 @@
         `).join("")
       : `<p class="muted">없음</p>`;
 
-    const kpiHtml = kpis.length
-      ? kpis.map((k) => `
-          <div class="box" style="border-left:4px solid ${levelColor(k?.level)};">
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-              <strong>${escapeHtml(k?.label || k?.code || "KPI")}</strong>
-              ${levelBadge(k?.level)}
-            </div>
-            <div class="kpi-value">${escapeHtml(k?.unit === "ratio" ? ratioToPercent(k?.value) : String(k?.value ?? "-"))}</div>
-            <div class="muted">${escapeHtml(k?.comment || "-")}</div>
-          </div>
-        `).join("")
-      : "<p class=\"muted\">없음</p>";
+    const flowHtml = latestMonth
+      ? `
+        <div class="box"><strong>매출</strong><div class="kpi-value">${formatWon(latestMonth.sales || 0)}원</div></div>
+        <div class="box"><strong>재료비</strong><div class="kpi-value">${formatWon(latestMonth.material_cost || 0)}원</div></div>
+        <div class="box"><strong>인건비</strong><div class="kpi-value">${formatWon(latestMonth.labor_cost || 0)}원</div></div>
+        <div class="box"><strong>임차료</strong><div class="kpi-value">${formatWon(latestMonth.rent || 0)}원</div></div>
+        <div class="box"><strong>기타비용</strong><div class="kpi-value">${formatWon(latestMonth.other_cost || 0)}원</div></div>
+        <div class="box"><strong>영업이익</strong><div class="kpi-value">${formatWon(latestMonth.profit || 0)}원</div></div>
+      `
+      : `
+        <div class="box"><strong>매출</strong><div class="kpi-value">${formatWon(v.revenue)}원</div></div>
+        <div class="box"><strong>비용+인건비</strong><div class="kpi-value">${formatWon(v.cost + v.labor)}원</div></div>
+        <div class="box"><strong>영업이익</strong><div class="kpi-value">${formatWon(v.profit)}원</div></div>
+      `;
 
     const benchRows = bench.length
       ? bench.map((b) => `
@@ -2511,28 +1533,30 @@
         `).join("")
       : `<tr><td colspan="7">없음</td></tr>`;
 
-    const riskHtml = risks.length
-      ? risks.map((r) => `<li><strong>${escapeHtml(r?.title || r?.code || "리스크")}</strong> — ${escapeHtml(r?.detail || "-")}</li>`).join("")
-      : "<li>현재 규칙 기준 주요 리스크 없음</li>";
-
-    const priorityColor = { P1: "#dc2626", P2: "#b45309", P3: "#2563eb" };
-    const actionHtml = actions.length
-      ? actions.map((a) => {
-          const pr = String(a?.priority || "P?").toUpperCase();
-          const how = Array.isArray(a?.how) ? a.how : [];
-          const howHtml = how.length ? `<ul>${how.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul>` : "";
+    const oppHtml = opportunities.length
+      ? opportunities.map((o) => {
+          const amount = o?.category === "경영 임계점" ? o?.breakeven_sales : o?.expected_credit;
+          const amountLabel = o?.category === "경영 임계점" ? "손익분기점" : (o?.expected_credit_label || "예상 공제액");
           return `
-          <div class="box" style="border-left:4px solid ${priorityColor[pr] || "#64748b"};">
-            <strong>[${escapeHtml(pr)}] ${escapeHtml(a?.title || "액션")}</strong>
-            <div class="muted" style="margin-top:4px;">${escapeHtml(a?.why || "-")}</div>
-            ${howHtml}
+          <div class="box">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <strong>${escapeHtml(o?.title || "절세 기회")}</strong>
+              <span class="badge" style="color:#2563eb; border-color:#2563eb;">${escapeHtml(o?.applicability || "-")}</span>
+            </div>
+            <div class="kpi-value">${amountLabel} ${fmtWonFull(amount)}</div>
+            <div class="muted">${escapeHtml(o?.why || "-")}</div>
           </div>`;
         }).join("")
-      : "<p class=\"muted\">현재 규칙 기준 실행 액션 없음</p>";
+      : "<p class=\"muted\">현재 발견된 절세 기회가 없습니다.</p>";
 
-    const execHtml = exec.length
-      ? `<ul>${exec.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul>`
-      : "<p class=\"muted\">없음</p>";
+    const scenarioHtml = scenarioOptions.length
+      ? scenarioOptions.map((opt) => `
+          <div class="box">
+            <strong>${escapeHtml(opt?.label || "시나리오")}</strong>
+            <div class="kpi-value">+${fmtWonFull(opt?.profit_delta)}</div>
+          </div>
+        `).join("") + (scenarioReco ? `<p class="muted">🎯 ${escapeHtml(scenarioReco)}</p>` : "")
+      : "<p class=\"muted\">시뮬레이션에 필요한 데이터가 부족합니다.</p>";
 
     return `
 <!doctype html>
@@ -2614,13 +1638,10 @@
     <div class="box"><strong>이익률</strong><div class="kpi-value">${ratioToPercent(v.profitRatio)}</div></div>
   </div>
 
-  <h2>요약 리포트</h2>
-  ${execHtml}
+  <h2>이번 달 돈의 흐름</h2>
+  <div class="grid">${flowHtml}</div>
 
-  <h2>KPI 상세</h2>
-  <div class="grid">${kpiHtml}</div>
-
-  <h2>세금 브리프</h2>
+  <h2>세금 신고 요약</h2>
   <div class="grid">
     <div class="box"><strong>월 부가세 추정</strong><div class="kpi-value">${formatWon(tax?.vat?.due_month || 0)}원</div></div>
     <div class="box"><strong>연 부가세/납부 추정</strong><div class="kpi-value">${formatWon(tax?.vat?.due_year || 0)}원</div></div>
@@ -2628,7 +1649,15 @@
     <div class="box"><strong>연 4대보험 사업주부담 추정</strong><div class="kpi-value">${formatWon(tax?.insurance?.employer_year || 0)}원</div></div>
   </div>
 
-  <h2>Benchmark 비교</h2>
+  <div class="page-break"></div>
+
+  <h2>TS가 찾은 절세 기회</h2>
+  ${oppHtml}
+
+  <h2>개선 시뮬레이션</h2>
+  ${scenarioHtml}
+
+  <h2>업종 Benchmark</h2>
   <table>
     <thead>
       <tr>
@@ -2644,18 +1673,8 @@
     <tbody>${benchRows}</tbody>
   </table>
 
-  <div class="page-break"></div>
-
-  <h2>리스크 드라이버</h2>
-  <ul>${riskHtml}</ul>
-
-  <h2>실행 액션</h2>
-  ${actionHtml}
-
-  <h2>가정</h2>
+  <h2>가정 / 제한사항</h2>
   ${assumptionHtml}
-
-  <h2>제한사항 / 부분 실패</h2>
   ${failureHtml}
 
   <div class="pdf-footer">
@@ -2672,7 +1691,7 @@
       return;
     }
 
-    const html = buildPdfHtml(lastResponse);
+    const html = buildPdfHtml(lastResponse, lastV2Data);
     const win = window.open("", "_blank", "width=1100,height=900");
     if (!win) {
       showError("팝업이 차단되어 PDF 저장 창을 열 수 없습니다.");
@@ -2689,494 +1708,233 @@
     }, 300);
   }
 
-  async function fetchRecords() {
-    try {
-      const base = getApiBase();
-      const token = getToken();
-      if (!token) return [];
-
-      const res = await fetch(`${base}/api/v1/records`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        cache: "no-store"
-      });
-
-      if (!res.ok) {
-        console.warn("[TS] records fetch failed:", res.status);
-        return [];
-      }
-
-      const data = await res.json();
-      return Array.isArray(data?.items) ? data.items : [];
-    } catch (e) {
-      console.warn("[TS] records fetch error:", e);
-      return [];
-    }
-  }
-
-  function renderHistoryMonthPopover() {
-    const grid = $("historyMonthPopoverGrid");
-    const yearEl = $("historyMonthPopoverYear");
-    if (!grid || !yearEl) return;
-
-    yearEl.textContent = String(historyPickerYear);
-    grid.innerHTML = "";
-
-    const selected = String(historySelectedMonth || "");
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1;
-
-    for (let month = 1; month <= 12; month += 1) {
-      const mm = String(month).padStart(2, "0");
-      const raw = `${historyPickerYear}-${mm}`;
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "history-month-popover-month";
-      if (raw === selected) btn.classList.add("active");
-      if (historyPickerYear === currentYear && month === currentMonth) btn.classList.add("current");
-      btn.textContent = `${month}월`;
-      btn.addEventListener("click", () => {
-        historySelectedMonth = raw;
-        if (lastResponse) renderHistoryComparison(lastResponse);
-        closeHistoryMonthPopover();
-      });
-      grid.appendChild(btn);
-    }
-  }
-
-  function openHistoryMonthPopover() {
-    const pop = $("historyMonthPopover");
-    if (!pop) return;
-    const match = String(historySelectedMonth || "").match(/^(\d{4})-(\d{2})$/);
-    historyPickerYear = match ? Number(match[1]) : new Date().getFullYear();
-    renderHistoryMonthPopover();
-    pop.classList.remove("hidden");
-  }
-
-  function closeHistoryMonthPopover() {
-    $("historyMonthPopover")?.classList.add("hidden");
-  }
-
-  function toggleHistoryMonthPopover() {
-    const pop = $("historyMonthPopover");
-    if (!pop) return;
-    if (pop.classList.contains("hidden")) openHistoryMonthPopover();
-    else closeHistoryMonthPopover();
-  }
-
-  function monthlyProfitFromRecord(r) {
-    const rev = Number(r?.revenue_vat_included || 0);
-    const cost = Number(r?.cost_vat_included || 0);
-    const labor = Number(r?.labor_cost || 0);
-    return rev - cost - labor;
-  }
-
-  function deltaText(curr, prev) {
-    const diff = Number(curr || 0) - Number(prev || 0);
-    const sign = diff > 0 ? "+" : "";
-    return `${sign}${formatWon(diff)}원`;
-  }
-
-  function ratioDeltaText(curr, prev) {
-    const diff = (Number(curr || 0) - Number(prev || 0)) * 100;
-    const sign = diff > 0 ? "+" : "";
-    return `${sign}${diff.toFixed(1)}%p`;
-  }
-
-  function buildHistoryComment(curr, prev) {
-    const currProfit = monthlyProfitFromRecord(curr);
-    const prevProfit = monthlyProfitFromRecord(prev);
-
-    const currCostRatio = Number(curr?.revenue_vat_included || 0) > 0
-      ? (Number(curr?.cost_vat_included || 0) + Number(curr?.labor_cost || 0)) / Number(curr?.revenue_vat_included || 1)
-      : 0;
-    const prevCostRatio = Number(prev?.revenue_vat_included || 0) > 0
-      ? (Number(prev?.cost_vat_included || 0) + Number(prev?.labor_cost || 0)) / Number(prev?.revenue_vat_included || 1)
-      : 0;
-
-    const currLaborRatio = Number(curr?.revenue_vat_included || 0) > 0
-      ? Number(curr?.labor_cost || 0) / Number(curr?.revenue_vat_included || 1)
-      : 0;
-    const prevLaborRatio = Number(prev?.revenue_vat_included || 0) > 0
-      ? Number(prev?.labor_cost || 0) / Number(prev?.revenue_vat_included || 1)
-      : 0;
-
-    const parts = [];
-
-    if (currProfit > prevProfit) {
-      parts.push("이전 기록 대비 추정 이익이 증가했습니다.");
-    } else if (currProfit < prevProfit) {
-      parts.push("이전 기록 대비 추정 이익이 감소했습니다.");
-    } else {
-      parts.push("이전 기록 대비 추정 이익은 유사합니다.");
-    }
-
-    if (currCostRatio < prevCostRatio) {
-      parts.push("총비용률이 낮아져 수익성 측면에서 긍정적입니다.");
-    } else if (currCostRatio > prevCostRatio) {
-      parts.push("총비용률이 높아져 비용 구조 점검이 필요할 수 있습니다.");
-    }
-
-    if (currLaborRatio < prevLaborRatio) {
-      parts.push("인건비율은 이전 기록보다 낮아졌습니다.");
-    } else if (currLaborRatio > prevLaborRatio) {
-      parts.push("인건비율은 이전 기록보다 높아졌습니다.");
-    }
-
-    if (currProfit < 0 && prevProfit >= 0) {
-      parts.push("흑자 구조에서 적자 구조로 바뀐 것으로 보여 즉시 원가·인건비 점검이 필요합니다.");
-    } else if (currProfit >= 0 && prevProfit < 0) {
-      parts.push("직전 적자 구간에서 벗어난 점은 긍정적입니다.");
-    }
-
-    return parts.join(" ");
-  }
-
-  function renderHistoryTrend(records) {
-    const emptyBox = $("historyTrendEmpty");
-    const chartBox = $("historyTrendChartBox");
-    const canvas = $("historyTrendCanvas");
-    if (!emptyBox || !chartBox || !canvas) return;
-
-    const rows = (Array.isArray(records) ? records : [])
-      .filter((r) => r?.month)
-      .slice()
-      .sort((a, b) => String(a.month).localeCompare(String(b.month)));
-
-    if (historyTrendChart) {
-      historyTrendChart.destroy();
-      historyTrendChart = null;
-    }
-
-    if (rows.length < 2 || typeof Chart === "undefined") {
-      emptyBox.style.display = "block";
-      chartBox.style.display = "none";
-      return;
-    }
-
-    emptyBox.style.display = "none";
-    chartBox.style.display = "block";
-
-    const labels = rows.map((r) => String(r.month || "-"));
-    const revenue = rows.map((r) => safeNumber(r?.revenue_vat_included || 0));
-    const cost = rows.map((r) => safeNumber(r?.cost_vat_included || 0));
-    const profit = rows.map((r) => safeNumber(r?.revenue_vat_included || 0) - safeNumber(r?.cost_vat_included || 0) - safeNumber(r?.labor_cost || 0));
-
-    historyTrendChart = new Chart(canvas, {
-      type: "line",
-      data: {
-        labels,
-        datasets: [
-          {
-            label: "매출",
-            data: revenue,
-            borderColor: "#4C7BF0",
-            backgroundColor: "rgba(76,123,240,.10)",
-            tension: 0.3,
-            fill: true,
-            pointRadius: 3
-          },
-          {
-            label: "총비용",
-            data: cost,
-            borderColor: "#EF6C86",
-            backgroundColor: "rgba(239,108,134,.08)",
-            tension: 0.3,
-            fill: false,
-            pointRadius: 3
-          },
-          {
-            label: "추정 이익",
-            data: profit,
-            borderColor: "#22A06B",
-            backgroundColor: "rgba(34,160,107,.10)",
-            tension: 0.3,
-            fill: false,
-            pointRadius: 3
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: { duration: 600, easing: "easeOutQuart" },
-        interaction: { mode: "index", intersect: false },
-        plugins: {
-          legend: {
-            display: true,
-            labels: { usePointStyle: true, pointStyle: "circle", padding: 14, color: "rgba(11,18,32,.72)", font: { weight: "700" } }
-          },
-          tooltip: {
-            backgroundColor: "rgba(15,23,42,0.92)",
-            padding: 12,
-            cornerRadius: 12,
-            callbacks: {
-              label: (context) => `${context.dataset.label}: ${formatWon(context.parsed.y)}원`
-            }
-          }
-        },
-        scales: {
-          x: { grid: { display: false }, ticks: { color: "rgba(11,18,32,.62)", font: { weight: "700" } } },
-          y: {
-            grid: { color: "rgba(15,23,42,.08)" },
-            ticks: { color: "rgba(11,18,32,.58)", callback: (v) => `${formatWon(v)}` }
-          }
-        }
-      }
-    });
-  }
-
-  function renderHistoryComparison(currentResp) {
-    const box = $("historyCompareBox");
-    if (!box) return;
-
-    if (!historySelectedMonth) {
-      box.innerHTML = `<div class="empty-note">오른쪽 달력 버튼을 눌러 비교할 월을 선택해주세요.</div>`;
-      return;
-    }
-
-    const current = currentResp?.result;
-    if (!current) {
-      box.innerHTML = `<div class="empty-note">비교할 현재 결과가 없습니다.</div>`;
-      return;
-    }
-
-    const currentRecordId = currentResp?.meta?.record_id || null;
-    const candidates = Array.isArray(lastRecords)
-      ? lastRecords.filter((r) => r?.record_id && r.record_id !== currentRecordId && String(r?.month || "").slice(0, 7) === historySelectedMonth)
-      : [];
-
-    if (candidates.length === 0) {
-      box.innerHTML = `<div class="empty-note">선택한 ${escapeHtml(historySelectedMonth)} 월의 저장 기록이 없어 비교할 수 없습니다.</div>`;
-      return;
-    }
-
-    const prev = candidates[0];
-
-    const currRev = Number(current?.annualized?.revenue_vat_included || 0) / 12;
-    const currCost = Number(current?.annualized?.cost_vat_included || 0) / 12;
-    const currLabor = Number(current?.annualized?.labor_cost || 0) / 12;
-    const currProfit = Number(current?.derived?.monthly_profit_estimate || (currRev - currCost - currLabor));
-
-    const prevRev = Number(prev?.revenue_vat_included || 0);
-    const prevCost = Number(prev?.cost_vat_included || 0);
-    const prevLabor = Number(prev?.labor_cost || 0);
-    const prevProfit = monthlyProfitFromRecord(prev);
-
-    const currCostRatio = currRev > 0 ? (currCost + currLabor) / currRev : 0;
-    const prevCostRatio = prevRev > 0 ? (prevCost + prevLabor) / prevRev : 0;
-
-    const currLaborRatio = currRev > 0 ? currLabor / currRev : 0;
-    const prevLaborRatio = prevRev > 0 ? prevLabor / prevRev : 0;
-
-    const comment = buildHistoryComment(
-      { revenue_vat_included: currRev, cost_vat_included: currCost, labor_cost: currLabor },
-      prev
-    );
-
-    box.innerHTML = `
-      <div class="brief-item">
-        <div class="brief-k">비교 기준</div>
-        <div class="brief-v">선택 월 기록 (${escapeHtml(prev?.month || "-")})</div>
-      </div>
-      <div class="brief-item">
-        <div class="brief-k">월 매출 변화</div>
-        <div class="brief-v">${deltaText(currRev, prevRev)}</div>
-      </div>
-      <div class="brief-item">
-        <div class="brief-k">월 총비용 변화</div>
-        <div class="brief-v">${deltaText(currCost + currLabor, prevCost + prevLabor)}</div>
-      </div>
-      <div class="brief-item">
-        <div class="brief-k">월 인건비 변화</div>
-        <div class="brief-v">${deltaText(currLabor, prevLabor)}</div>
-      </div>
-      <div class="brief-item">
-        <div class="brief-k">월 추정 이익 변화</div>
-        <div class="brief-v">${deltaText(currProfit, prevProfit)}</div>
-      </div>
-      <div class="brief-item">
-        <div class="brief-k">총비용률 변화</div>
-        <div class="brief-v">${ratioDeltaText(currCostRatio, prevCostRatio)}</div>
-      </div>
-      <div class="brief-item">
-        <div class="brief-k">인건비율 변화</div>
-        <div class="brief-v">${ratioDeltaText(currLaborRatio, prevLaborRatio)}</div>
-      </div>
-      <div style="margin-top:10px;" class="block-sub">${escapeHtml(comment)}</div>
-    `;
-  }
-
-  function renderAnalysisCards(resp) {
+  function buildTaxFilingPdfHtml() {
+    const resp = lastResponse;
     const analysis = resp?.analysis || {};
-    renderRiskBanner(analysis);
-    renderDiagnosis(resp);
-    renderFinancialStructure(resp);
-    renderExecutive(analysis);
-    renderTaxBrief(analysis);
-    renderRisk(analysis);
-    renderActions(analysis);
-    renderKpiCards(analysis);
-    renderBenchmarks(analysis);
-    renderBenchmarkSummary(analysis);
-    renderMeta(resp);
-    renderCharts(analysis);
-    renderHistoryComparison(resp);
-    updateTsDashHeader();
-    renderTsDashboardKpis(analysis);
-    renderTsTaxDonut(analysis);
-    if (lastV2Data) renderTsOppSummary(lastV2Data);
-    renderDashboardHome();
+    const breakdown = resp?.result?.tax_estimate?.breakdown || {};
+    const vat = breakdown.vat || {};
+    const income = breakdown.income || {};
+    const insurance = breakdown.insurance || {};
+    const sim = breakdown.taxpayer_type_simulation || null;
+    const typeLabel = (t) => (t === "SIMPLE" ? "간이과세자" : "일반과세자");
+
+    const now = new Date();
+    const vatNext = nextVatFiling(now);
+    const incomeNext = nextIncomeTaxFiling(now);
+    const withholdingNext = nextWithholdingFiling(now);
+
+    const rows = ledgerAllRows();
+    const reviewRows = rows.filter((r) => !r.evidence || r.status === "review").slice(0, 10);
+
+    const oppEligible = (Array.isArray(lastV2Data?.opportunities) ? lastV2Data.opportunities : [])
+      .filter((o) => o.category === "절세 기회" && o.eligible);
+
+    const todayStr = new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
+
+    const vatRows = vat.taxpayer_type === "SIMPLE"
+      ? `
+        <tr><td>과세유형</td><td>간이과세자</td></tr>
+        <tr><td>연 환산 매출(공급대가)</td><td>${formatWon(vat.sales_annual_gross)}원</td></tr>
+        <tr><td>부가가치율 적용 실효세율</td><td>${((vat.simple_effective_rate || 0) * 100).toFixed(2)}%</td></tr>
+        <tr><td>납부의무 면제 여부</td><td>${vat.is_exempt ? "면제 대상" : "면제 대상 아님"}</td></tr>
+        <tr><td><b>월 예상 납부세액</b></td><td><b>${formatWon(vat.vat_due_month)}원</b></td></tr>
+      `
+      : `
+        <tr><td>과세유형</td><td>일반과세자</td></tr>
+        <tr><td>과세표준(월)</td><td>${formatWon(vat.taxable_base_month)}원</td></tr>
+        <tr><td>매출세액(월)</td><td>${formatWon(vat.output_vat_month)}원</td></tr>
+        <tr><td>매입세액공제(월, 추정)</td><td>${formatWon(vat.input_vat_credit_month_est)}원</td></tr>
+        <tr><td>의제매입세액공제(월)</td><td>${formatWon(vat.deemed_input_credit_month)}원</td></tr>
+        <tr><td><b>월 예상 납부세액</b></td><td><b>${formatWon(vat.vat_due_month)}원</b></td></tr>
+      `;
+
+    const simRow = sim
+      ? `<div class="risk-callout" style="background:#eff6ff; border-color:#bfdbfe; color:#1e3a8a;">
+          참고: ${escapeHtml(typeLabel(sim.alt_type))}였다면 연 부가세 ${formatWon(sim.alt_vat_due_year)}원 (현재 ${escapeHtml(typeLabel(sim.current_type))} 연 ${formatWon(sim.current_vat_due_year)}원)
+        </div>`
+      : "";
+
+    const oppHtml = oppEligible.length
+      ? oppEligible.map((o) => `
+          <div class="box">
+            <strong>${escapeHtml(o?.title || "절세 기회")}</strong>
+            <div class="kpi-value">${fmtWonFull(o?.expected_credit)}</div>
+            <div class="muted">${escapeHtml(o?.why || "-")}</div>
+          </div>`).join("")
+      : "<p class=\"muted\">현재 발견된 절세 기회가 없습니다.</p>";
+
+    const reviewHtml = reviewRows.length
+      ? `<table><thead><tr><th>날짜</th><th>거래처</th><th>내용</th><th>금액</th><th>증빙</th></tr></thead><tbody>
+          ${reviewRows.map((r) => `
+            <tr>
+              <td>${escapeHtml(r.date)}</td>
+              <td>${escapeHtml(r.vendor)}</td>
+              <td>${escapeHtml(r.desc)}</td>
+              <td>${formatWon(Math.abs(r.amount))}원</td>
+              <td>${r.evidence ? escapeHtml(r.evidence) : "없음"}</td>
+            </tr>
+          `).join("")}
+        </tbody></table>`
+      : "<p class=\"muted\">확인이 필요한 거래가 없습니다.</p>";
+
+    const scheduleHtml = [vatNext, incomeNext, withholdingNext]
+      .sort((a, b) => a.date - b.date)
+      .map((it) => `<li>${escapeHtml(it.label)} — ${fmtMD(it.date)} (${escapeHtml(ddayText(it.date))})</li>`)
+      .join("");
+
+    return `
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<title>TS 세금 신고 참고서식</title>
+<style>
+  :root{ --navy:#182459; --navy2:#0E1638; --line:#e2e5ea; }
+  *{ box-sizing:border-box; }
+  body{
+    font-family: "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", Arial, sans-serif;
+    color:#0b1220; margin:0; padding:36px; line-height:1.55;
   }
+  .pdf-header{ display:flex; align-items:center; justify-content:space-between; border-bottom:2px solid var(--navy); padding-bottom:14px; margin-bottom:18px; }
+  .pdf-brand{ display:flex; align-items:center; gap:10px; }
+  .pdf-logo{ width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg,var(--navy),var(--navy2)); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:14px; }
+  .pdf-brand-text{ font-size:18px; font-weight:900; letter-spacing:-.3px; }
+  .pdf-meta{ text-align:right; font-size:12px; color:#64748b; }
+  h1{font-size:22px; margin:0 0 4px; letter-spacing:-.4px;}
+  h2{font-size:15px; margin:26px 0 10px; padding-bottom:6px; border-bottom:1px solid var(--line); color:var(--navy);}
+  .sub{color:#6b7280; font-size:13px; margin-bottom:6px;}
+  .risk-callout{ background:#fef2f2; border:1px solid #fca5a5; color:#991b1b; border-radius:12px; padding:12px 14px; font-size:13px; font-weight:700; margin:14px 0; }
+  .box{ border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:8px; background:#fafbfc; }
+  .kpi-value{ font-size:16px; font-weight:900; margin:4px 0; }
+  .muted{color:#6b7280; font-size:12px; margin-top:4px;}
+  table{ width:100%; border-collapse:collapse; font-size:12px; }
+  th, td{ border:1px solid var(--line); padding:7px 8px; text-align:left; }
+  th{background:#f3f4f6; font-weight:800; color:#374151;}
+  ul{margin:6px 0 0; padding-left:18px;}
+  li{margin-bottom:6px;}
+  .pdf-footer{ margin-top:30px; padding-top:12px; border-top:1px solid var(--line); font-size:10.5px; color:#94a3b8; }
+  @media print{ body{padding:18px;} }
+</style>
+</head>
+<body>
+  <div class="pdf-header">
+    <div class="pdf-brand">
+      <div class="pdf-logo">TS</div>
+      <div class="pdf-brand-text">TS (tax secretary)</div>
+    </div>
+    <div class="pdf-meta">생성일: ${escapeHtml(todayStr)}</div>
+  </div>
 
-  function updateTsDashHeader() {
-    const dateEl = $("tsDashDate");
-    if (!dateEl) return;
-    const m = String(inpMonth?.value || "").match(/^(\d{4})-(\d{2})$/);
-    dateEl.textContent = m ? `${m[1]}년 ${Number(m[2])}월` : "-";
-  }
+  <h1>세금 신고 참고서식</h1>
+  <div class="sub">
+    대상월: ${escapeHtml(resp?.result?.month || "-")} · 업종: ${escapeHtml(resp?.result?.business_type?.label || "-")} · 지역: ${escapeHtml(resp?.result?.region?.label || "-")}
+  </div>
 
-  function renderTsDashboardKpis(analysis) {
-    const wrap = $("tsDashKpiRow");
-    if (!wrap) return;
+  <h2>부가가치세 신고 참고 수치</h2>
+  <table>${vatRows}</table>
+  ${simRow}
 
-    const items = Array.isArray(analysis?.benchmarks?.items) ? analysis.benchmarks.items : [];
-    const pick = (metric) => items.find((x) => String(x?.metric) === metric);
-    const cost = pick("COST_RATIO");
-    const labor = pick("LABOR_RATIO");
-    const profit = pick("PROFIT_RATIO");
+  <h2>종합소득세 참고 수치</h2>
+  <table>
+    <tr><td>추정 과세표준(연)</td><td>${formatWon(income.taxable_income_est)}원</td></tr>
+    <tr><td>추정 종합소득세(연)</td><td>${formatWon(income.income_tax_est)}원</td></tr>
+    <tr><td>추정 지방소득세(연)</td><td>${formatWon(income.local_income_tax_est)}원</td></tr>
+  </table>
 
-    const tb = analysis?.tax_brief || {};
-    const taxTotal =
-      safeNumber(tb?.vat?.due_year || 0) +
-      safeNumber(tb?.income_tax?.due_year || 0) +
-      safeNumber(tb?.insurance?.employer_year || 0);
+  <h2>4대보험(사업주 부담 추정)</h2>
+  <table>
+    <tr><td>월 예상 부담액</td><td>${formatWon(insurance.employer_month_est)}원</td></tr>
+    <tr><td>연 예상 부담액</td><td>${formatWon(insurance.employer_year_est)}원</td></tr>
+  </table>
 
-    const deltaHtml = (diffPp, badWhenUp) => {
-      const n = Number(diffPp);
-      if (!Number.isFinite(n) || n === 0) return "";
-      const up = n > 0;
-      const arrow = up ? "▲" : "▼";
-      const bad = badWhenUp ? up : !up;
-      return `<span class="ts-dash-kpi-delta ${bad ? "risk" : "good"}">${arrow}${Math.abs(n).toFixed(1)}%p</span>`;
-    };
+  <h2>TS가 찾은 절세 공제</h2>
+  ${oppHtml}
 
-    const cardHtml = (iconSrc, label, valueText, deltaInner) => `
-      <div class="ts-dash-kpi-card">
-        <img class="ts-dash-kpi-icon" src="${iconSrc}" alt="" />
-        <div class="ts-dash-kpi-label">${escapeHtml(label)}</div>
-        <div class="ts-dash-kpi-value">${valueText}</div>
-        ${deltaInner}
-      </div>
+  <h2>신고 전 확인이 필요한 거래</h2>
+  ${reviewHtml}
+
+  <h2>신고 일정</h2>
+  <ul>${scheduleHtml}</ul>
+
+  <div class="pdf-footer">
+    본 서식은 홈택스 신고 전 참고용으로 정리한 추정 자료이며, 실제 제출은 국세청 홈택스에서 직접 진행해야 합니다. 확정 세액은 실제 신고·상담을 통해 확인이 필요합니다. © TS (tax secretary)
+  </div>
+</body>
+</html>
     `;
-
-    wrap.innerHTML = [
-      cardHtml("./icon-kpi-cost.png", metricLabel("COST_RATIO"), cost ? ratioToPercent(cost.my_value) : "-", deltaHtml(cost?.diff_pp, true)),
-      cardHtml("./icon-kpi-labor.png", metricLabel("LABOR_RATIO"), labor ? ratioToPercent(labor.my_value) : "-", deltaHtml(labor?.diff_pp, true)),
-      cardHtml("./icon-kpi-profit.png", metricLabel("PROFIT_RATIO"), profit ? ratioToPercent(profit.my_value) : "-", deltaHtml(profit?.diff_pp, false)),
-      cardHtml("./icon-kpi-tax.png", "예상 세금(연)", taxTotal > 0 ? fmtWonFull(taxTotal) : "-", ""),
-    ].join("");
   }
 
-  function renderTsOppSummary(data) {
-    const wrap = $("tsDashOppSummary");
-    if (!wrap) return;
-
-    const opps = Array.isArray(data?.opportunities) ? data.opportunities : [];
-    const taxSaveTotal = opps
-      .filter((o) => o.category === "절세 기회" && o.eligible)
-      .reduce((sum, o) => sum + (o.expected_credit || 0), 0);
-
-    const analysis = lastResponse?.analysis || {};
-    const items = Array.isArray(analysis?.benchmarks?.items) ? analysis.benchmarks.items : [];
-    const annualRevenue = safeNumber(lastResponse?.result?.annualized?.revenue_vat_included || 0);
-    const overCostItem = items
-      .filter((x) => ["COST_RATIO", "LABOR_RATIO"].includes(String(x?.metric)) && Number(x?.diff_pp || 0) > 0)
-      .sort((a, b) => Number(b?.diff_pp || 0) - Number(a?.diff_pp || 0))[0];
-    const costSaveEstimate = (overCostItem && annualRevenue > 0)
-      ? Math.round(annualRevenue * (Number(overCostItem.diff_pp) / 100))
-      : 0;
-
-    wrap.innerHTML = `
-      <h3 style="margin-bottom:12px;"><img src="./icon-opportunity-bulb.png" alt="" style="width:20px;height:20px;vertical-align:-4px;margin-right:6px;" />TS가 찾은 기회</h3>
-      <div class="ts-opp-summary-row">
-        <div class="ts-opp-summary-card blue">
-          <div class="ts-opp-summary-ic"><img src="./icon-opp-taxsave.png" alt="" /></div>
-          <div>
-            <div class="ts-opp-summary-label">절세 기회</div>
-            <div class="ts-opp-summary-value blue">${taxSaveTotal > 0 ? fmtWonFull(taxSaveTotal) : "-"}</div>
-            <div class="ts-opp-summary-note">세금을 더 줄일 수 있어요.</div>
-          </div>
-        </div>
-        <div class="ts-opp-summary-card amber">
-          <div class="ts-opp-summary-ic"><img src="./icon-opp-costsave.png" alt="" /></div>
-          <div>
-            <div class="ts-opp-summary-label">비용 절감 기회</div>
-            <div class="ts-opp-summary-value amber">${costSaveEstimate > 0 ? fmtWonFull(costSaveEstimate) : "추가 확인 필요"}</div>
-            <div class="ts-opp-summary-note">${overCostItem ? escapeHtml(metricLabel(overCostItem.metric)) + " 중앙값 대비 초과분 연환산" : "현재 비용 구조는 중앙값 이내예요."}</div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  function renderTsTaxDonut(analysis) {
-    const canvas = $("taxDonutCanvas");
-    const legend = $("taxDonutLegend");
-    if (!canvas || typeof Chart === "undefined") return;
-
-    const tb = analysis?.tax_brief || {};
-    const vat = safeNumber(tb?.vat?.due_year || 0);
-    const income = safeNumber(tb?.income_tax?.due_year || 0);
-    const insurance = safeNumber(tb?.insurance?.employer_year || 0);
-    const total = vat + income + insurance;
-
-    if (taxDonutChart) {
-      taxDonutChart.destroy();
-      taxDonutChart = null;
-    }
-
-    if (total <= 0) {
-      if (legend) legend.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
+  function exportTaxFilingPdf() {
+    if (!lastResponse) {
+      showError("먼저 계산을 실행해주세요.");
       return;
     }
 
-    const parts = [
-      { label: "부가가치세", value: vat, color: "#1A6DFF" },
-      { label: "종합소득세", value: income, color: "#FF6B6B" },
-      { label: "4대보험(사업주)", value: insurance, color: "#FFAB00" },
-    ].filter((p) => p.value > 0);
+    const html = buildTaxFilingPdfHtml();
+    const win = window.open("", "_blank", "width=1100,height=900");
+    if (!win) {
+      showError("팝업이 차단되어 PDF 저장 창을 열 수 없습니다.");
+      return;
+    }
 
-    taxDonutChart = new Chart(canvas, {
-      type: "doughnut",
-      data: {
-        labels: parts.map((p) => p.label),
-        datasets: [{ data: parts.map((p) => p.value), backgroundColor: parts.map((p) => p.color), borderWidth: 0 }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        cutout: "68%",
-      },
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+
+    setTimeout(() => {
+      win.focus();
+      win.print();
+    }, 300);
+  }
+
+  function csvEscape(v) {
+    const s = String(v == null ? "" : v);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  }
+
+  function exportReportCsv() {
+    const monthly = Array.isArray(v2LastMonthly) ? v2LastMonthly : [];
+    if (monthly.length === 0) {
+      showError("먼저 계산을 실행해주세요.");
+      return;
+    }
+
+    const headers = [
+      "월", "매출", "재료비", "인건비", "임차료", "기타비용", "총비용",
+      "영업이익", "영업이익률(%)", "인건비율(%)", "재료비율(%)", "손익분기매출", "객단가", "방문자수",
+    ];
+    const lines = [headers.map(csvEscape).join(",")];
+    monthly.forEach((m) => {
+      const row = [
+        m.month,
+        Math.round(safeNumber(m.sales)),
+        Math.round(safeNumber(m.material_cost)),
+        Math.round(safeNumber(m.labor_cost)),
+        Math.round(safeNumber(m.rent)),
+        Math.round(safeNumber(m.other_cost)),
+        Math.round(safeNumber(m.total_cost)),
+        Math.round(safeNumber(m.profit)),
+        (safeNumber(m.profit_ratio) * 100).toFixed(1),
+        (safeNumber(m.labor_ratio) * 100).toFixed(1),
+        (safeNumber(m.material_ratio) * 100).toFixed(1),
+        Math.round(safeNumber(m.breakeven_sales)),
+        Math.round(safeNumber(m.avg_ticket)),
+        Math.round(safeNumber(m.visit_count)),
+      ];
+      lines.push(row.map(csvEscape).join(","));
     });
 
-    if (legend) {
-      legend.innerHTML = parts.map((p) => `
-        <div class="ts-dash-donut-legend-row">
-          <span><span class="ts-dash-donut-legend-dot" style="background:${p.color}"></span>${escapeHtml(p.label)}</span>
-          <span>${Math.round((p.value / total) * 100)}%</span>
-        </div>
-      `).join("") + `
-        <div class="ts-dash-donut-legend-row" style="border-top:1px solid var(--line); padding-top:6px; margin-top:2px;">
-          <span>연 예상 세부담 합계</span><span>${fmtWonFull(total)}</span>
-        </div>
-      `;
-    }
+    const csvContent = "﻿" + lines.join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const monthLabel = String(inpMonth?.value || "report").replace(/[^0-9-]/g, "");
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `TS_경영리포트_${monthLabel || "report"}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
 
   function renderDashboardHome() {
@@ -3184,7 +1942,7 @@
     const analysis = lastResponse?.analysis || null;
     renderDashHomeSummary(analysis);
     renderDashHomeAlert(analysis);
-    renderDashCoreDiag(analysis);
+    renderDashGoal();
     renderDashOppTeaser(lastV2Data);
     renderDashSimTeaser(lastV2Data);
     renderDashTodo(analysis);
@@ -3192,40 +1950,78 @@
     renderDashCompleteness(lastV2Data);
   }
 
-  function renderDashCoreDiag(analysis) {
-    const box = $("dashCoreDiagBody");
+  function getMonthGoals() {
+    try { return JSON.parse(localStorage.getItem(LS_MONTH_GOAL_KEY) || "{}"); } catch { return {}; }
+  }
+  function setMonthGoals(obj) {
+    localStorage.setItem(LS_MONTH_GOAL_KEY, JSON.stringify(obj));
+  }
+
+  function renderDashGoal() {
+    const box = $("dashGoalBody");
     if (!box) return;
 
-    const items = Array.isArray(analysis?.benchmarks?.items) ? analysis.benchmarks.items : [];
-    const core = ["LABOR_RATIO", "MATERIAL_RATIO", "PROFIT_RATIO"]
-      .map((m) => items.find((x) => String(x?.metric) === m))
-      .filter(Boolean);
-
-    if (core.length === 0) {
+    const m = String(inpMonth?.value || "").match(/^(\d{4})-(\d{2})$/);
+    const monthKey = m ? `${m[1]}-${m[2]}` : "";
+    if (!monthKey) {
       box.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
       return;
     }
 
-    const worst = [...core]
-      .filter((x) => ["RISK", "WARN"].includes(String(x?.level).toUpperCase()))
-      .sort((a, b) => Math.abs(Number(b?.diff_pp || 0)) - Math.abs(Number(a?.diff_pp || 0)))[0];
+    const goals = getMonthGoals();
+    const goal = goals[monthKey];
 
-    const dotFor = (level) => {
-      const v = String(level || "").toUpperCase();
-      if (v === "RISK") return "🔴";
-      if (v === "WARN") return "🟡";
-      if (v === "GOOD") return "🟢";
-      return "⚪";
+    const monthly = Array.isArray(v2LastMonthly) ? v2LastMonthly : [];
+    const cur = monthly[monthly.length - 1] || null;
+    const curRevenue = cur ? safeNumber(cur.sales) : safeNumber(lastResponse?.result?.annualized?.revenue_vat_included || 0) / 12;
+    const curProfit = cur ? safeNumber(cur.profit) : null;
+
+    if (!goal) {
+      box.innerHTML = `
+        <div class="empty-note" style="margin-bottom:10px;">이번 달 매출·이익 목표를 설정하면 달성률을 확인할 수 있어요.</div>
+        <div class="ts-goal-input-row">
+          <input type="text" id="dashGoalRevenueInput" placeholder="목표 매출(원)" inputmode="numeric" />
+          <input type="text" id="dashGoalProfitInput" placeholder="목표 이익(원, 선택)" inputmode="numeric" />
+          <button class="ts-ledger-quick-btn primary" type="button" id="dashGoalSaveBtn">목표 설정</button>
+        </div>
+      `;
+      [$("dashGoalRevenueInput"), $("dashGoalProfitInput")].forEach((el) => {
+        el?.addEventListener("input", () => formatWonLiveInput(el));
+      });
+      $("dashGoalSaveBtn")?.addEventListener("click", () => {
+        const revenueGoal = getWonInput($("dashGoalRevenueInput"));
+        const profitGoal = getWonInput($("dashGoalProfitInput"));
+        if (!revenueGoal && !profitGoal) return;
+        const all = getMonthGoals();
+        all[monthKey] = { revenue: revenueGoal || 0, profit: profitGoal || 0 };
+        setMonthGoals(all);
+        renderDashGoal();
+      });
+      return;
+    }
+
+    const progressRow = (label, actual, target) => {
+      if (!target) return "";
+      const pct = Math.max(0, Math.min(100, Math.round((actual / target) * 100)));
+      return `
+        <div class="ts-completeness-stat" style="margin-bottom:12px;">
+          <div class="ts-completeness-top"><span class="pct">${pct}%</span><span class="lbl">${escapeHtml(label)} ${fmtWonFull(actual)} / ${fmtWonFull(target)}</span></div>
+          <div class="ts-completeness-bar"><div class="ts-completeness-bar-fill" style="width:${pct}%;"></div></div>
+        </div>
+      `;
     };
 
-    box.innerHTML = core.map((it) => `
-      <div class="ts-corediag-item">
-        <div class="ts-corediag-top"><span class="dot">${dotFor(it.level)}</span><span class="label">${escapeHtml(metricLabel(it.metric))}</span></div>
-        <div class="ts-corediag-value">${ratioToPercent(it.my_value)}</div>
-        <div class="ts-corediag-sub">업종 평균 ${ratioToPercent(it.p50)} · ${ppText(it.diff_pp)}</div>
-        ${it === worst ? `<div class="ts-corediag-note">현재 가장 먼저 개선해야 할 항목입니다.</div>` : ""}
-      </div>
-    `).join("");
+    box.innerHTML = `
+      ${progressRow("매출", curRevenue, goal.revenue)}
+      ${progressRow("이익", curProfit, goal.profit)}
+      <button class="ts-card-link" type="button" id="dashGoalEditBtn">목표 수정 →</button>
+    `;
+    $("dashGoalEditBtn")?.addEventListener("click", () => {
+      const all = getMonthGoals();
+      delete all[monthKey];
+      setMonthGoals(all);
+      renderDashGoal();
+    });
   }
 
   function renderDashOppTeaser(data) {
@@ -3245,8 +2041,10 @@
 
     box.innerHTML = `
       <div class="ts-opp-teaser-main"><span class="cnt">절세 기회 ${opps.length}건</span><span class="amt">최대 ${fmtWonFull(total)}</span></div>
-      <div class="ts-opp-teaser-top">가장 큰 기회: ${escapeHtml(top?.title || "")}</div>
-      <button class="ts-ledger-side-link" type="button" id="dashBtnGoSave">절세 도우미에서 확인 →</button>
+      <div class="ts-opp-teaser-row">
+        <span class="ts-opp-teaser-top">가장 큰 기회: ${escapeHtml(top?.title || "")}</span>
+        <button class="ts-card-link" type="button" id="dashBtnGoSave">절세 도우미에서 확인 →</button>
+      </div>
     `;
     $("dashBtnGoSave")?.addEventListener("click", () => goDashNav("save"));
   }
@@ -3268,8 +2066,8 @@
         <div class="ts-tax-ba-arrow">→</div>
         <div class="ts-tax-ba-col after"><div class="l">예상 영업이익</div><div class="v">${fmtWonFull(rec.new_profit)}</div></div>
       </div>
-      <div class="ts-tax-ba-note">+${fmtWonFull(rec.profit_delta)} · 세 방안 중 순이익 개선 효과가 가장 큽니다.</div>
-      <button class="ts-ledger-side-link" type="button" id="dashBtnGoReport">더 많은 시나리오 보기 → 경영 리포트</button>
+      <div class="ts-sim-result-banner"><span class="arrow">⬆</span><b>+${fmtWonFull(rec.profit_delta)}</b><span>세 방안 중 순이익 개선 효과가 가장 큽니다.</span></div>
+      <button class="ts-ledger-side-link" type="button" id="dashBtnGoReport" style="margin-top:10px;">더 많은 시나리오 보기 → 경영 리포트</button>
     `;
     $("dashBtnGoReport")?.addEventListener("click", () => goDashNav("report"));
   }
@@ -3287,9 +2085,14 @@
     const failures = Array.isArray(lastResponse?.meta?.partial_failures) ? lastResponse.meta.partial_failures : [];
 
     box.innerHTML = `
-      <div class="ts-completeness-top"><span class="pct">${dc.pct}%</span><span class="lbl">${dc.filled}/${dc.total}개 입력 완료</span></div>
-      ${dc.missing_note ? `<div class="ts-completeness-note">${escapeHtml(dc.missing_note)}</div>` : ""}
-      <button class="ts-ledger-quick-btn primary" type="button" id="dashBtnAddInfo">+ 정보 입력하기</button>
+      <div class="ts-completeness-row">
+        <div class="ts-completeness-stat">
+          <div class="ts-completeness-top"><span class="pct">${dc.pct}%</span><span class="lbl">${dc.filled}/${dc.total}개 입력 완료</span></div>
+          <div class="ts-completeness-bar"><div class="ts-completeness-bar-fill" style="width:${dc.pct}%;"></div></div>
+        </div>
+        <button class="ts-card-link" type="button" id="dashBtnAddInfo">정보 입력하기 →</button>
+      </div>
+      ${dc.missing_note ? `<div class="ts-completeness-note" style="margin-top:10px;">${escapeHtml(dc.missing_note)}</div>` : ""}
       ${failures.length ? `
         <details class="ts-dash-details" style="margin-top:12px;">
           <summary>분석 기준 및 가정 보기</summary>
@@ -3369,24 +2172,95 @@
       cardHtml("blue", oppIcon, "절세 기회", oppCount != null ? `${oppCount}건` : "-", ""),
     ];
 
+    const yoyCard = Array.isArray(analysis?.kpi_cards)
+      ? analysis.kpi_cards.find((k) => k?.code === "SALES_GROWTH_YOY")
+      : null;
+    if (yoyCard) {
+      const yoyPct = Number(yoyCard.value) * 100;
+      const up = yoyPct > 0;
+      const cls = up ? "up" : (yoyPct < 0 ? "down" : "flat");
+      const arrow = up ? "▲" : (yoyPct < 0 ? "▼" : "-");
+      cards.push(
+        cardHtml(
+          "blue",
+          salesIcon,
+          "전년 대비 매출",
+          `${up ? "+" : ""}${yoyPct.toFixed(1)}%`,
+          `<div class="ts-home-kpi-sub ${cls}">${arrow} 연환산 기준</div>`
+        )
+      );
+    }
+
     wrap.innerHTML = cards.join("");
+  }
+
+  function getAlertThreshold() {
+    const v = Number(localStorage.getItem(LS_ALERT_THRESHOLD_KEY));
+    return Number.isFinite(v) && v > 0 ? v : DEFAULT_ALERT_THRESHOLD_PP;
+  }
+  function setAlertThreshold(v) {
+    localStorage.setItem(LS_ALERT_THRESHOLD_KEY, String(v));
+  }
+
+  function findAlertWorstItem(analysis) {
+    const items = Array.isArray(analysis?.benchmarks?.items) ? analysis.benchmarks.items : [];
+    const threshold = getAlertThreshold();
+    const candidates = items
+      .filter((x) => Number.isFinite(Number(x?.diff_pp)) && Object.prototype.hasOwnProperty.call(METRIC_WORSE_WHEN_HIGH, x?.metric))
+      .map((x) => {
+        const worseWhenHigh = METRIC_WORSE_WHEN_HIGH[x.metric];
+        const badness = worseWhenHigh ? Number(x.diff_pp) : -Number(x.diff_pp);
+        return { item: x, badness };
+      })
+      .filter((x) => x.badness >= threshold)
+      .sort((a, b) => b.badness - a.badness);
+    return candidates[0]?.item || null;
+  }
+
+  function renderDashAlertSettings() {
+    const box = $("dashAlertSettings");
+    if (!box) return;
+    const threshold = getAlertThreshold();
+    box.innerHTML = `
+      <span>⚙ 알림 기준: 업종 평균보다 <b>${threshold}%p</b> 이상 차이나면 알려드려요</span>
+      <button class="ts-card-link" type="button" id="dashAlertSettingsEditBtn">수정</button>
+    `;
+    $("dashAlertSettingsEditBtn")?.addEventListener("click", () => {
+      box.innerHTML = `
+        <span>알림 기준(%p):</span>
+        <input type="text" id="dashAlertThresholdInput" inputmode="numeric" value="${threshold}" style="width:56px;" />
+        <button class="ts-ledger-quick-btn primary" type="button" id="dashAlertThresholdSaveBtn">저장</button>
+      `;
+      $("dashAlertThresholdInput")?.focus();
+      $("dashAlertThresholdSaveBtn")?.addEventListener("click", () => {
+        const raw = Number(String($("dashAlertThresholdInput")?.value || "").replace(/[^\d.]/g, ""));
+        const next = Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_ALERT_THRESHOLD_PP;
+        setAlertThreshold(next);
+        renderDashAlertSettings();
+        renderDashHomeAlert(lastResponse?.analysis || null);
+      });
+    });
   }
 
   function renderDashHomeAlert(analysis) {
     const box = $("dashHomeAlert");
     if (!box) return;
 
-    const bench = analyzeBenchmarkHighlights(analysis || {});
-    const worst = bench?.worst;
+    renderDashAlertSettings();
+
+    const worst = findAlertWorstItem(analysis || {});
 
     if (!worst) {
       box.classList.add("hidden");
       return;
     }
 
+    const worseWhenHigh = METRIC_WORSE_WHEN_HIGH[worst.metric];
+    const directionWord = worseWhenHigh ? "높습니다" : "낮습니다";
+
     const titleEl = $("dashHomeAlertTitle");
     const detailEl = $("dashHomeAlertDetail");
-    if (titleEl) titleEl.textContent = `${metricLabel(worst.metric)}이 업종 평균보다 ${ppText(worst.diff_pp)} 높습니다`;
+    if (titleEl) titleEl.textContent = `${metricLabel(worst.metric)}이 업종 평균보다 ${Math.abs(Number(worst.diff_pp)).toFixed(1)}%p ${directionWord}`;
 
     const monthly = Array.isArray(v2LastMonthly) ? v2LastMonthly : [];
     const cur = monthly[monthly.length - 1];
@@ -3542,15 +2416,42 @@
     { id: "t1", date: "2026-08-10", vendor: "거래처 미확인", desc: "계좌 입금", amount: 250000, type: "income", category: "기타", evidence: null, method: "계좌이체", status: "review", taxNote: "거래 목적 확인 필요", aiNote: "거래 목적을 특정할 수 없어 확인이 필요합니다. 매출인지 개인 입금인지 확인해주세요." },
   ];
   const LEDGER_CUSTOM_KEY = "ts_ledger_custom_v1";
+  const LEDGER_RECURRING_KEY = "ts_ledger_recurring_v1";
+  const LEDGER_LEARNED_KEY = "ts_ledger_learned_v1";
+  const LEDGER_CATEGORIES = ["재료비", "인건비", "임차료", "공과금", "광고비", "배달매출", "카드매출", "면세농산물", "현금매출", "기타"];
 
   let ledgerFilter = { type: "all", category: "all", evidence: "all", status: "all", q: "" };
   let ledgerSelectedId = null;
+  let ledgerReclassifyOpen = false;
+
+  function getLedgerRecurring() {
+    try { return JSON.parse(localStorage.getItem(LEDGER_RECURRING_KEY) || "[]"); } catch { return []; }
+  }
+  function setLedgerRecurring(arr) { localStorage.setItem(LEDGER_RECURRING_KEY, JSON.stringify(arr)); }
+
+  function getLedgerLearned() {
+    try { return JSON.parse(localStorage.getItem(LEDGER_LEARNED_KEY) || "{}"); } catch { return {}; }
+  }
+  function setLedgerLearned(obj) { localStorage.setItem(LEDGER_LEARNED_KEY, JSON.stringify(obj)); }
 
   function getLedgerCustom() {
     try { return JSON.parse(localStorage.getItem(LEDGER_CUSTOM_KEY) || "[]"); } catch { return []; }
   }
   function setLedgerCustom(arr) { localStorage.setItem(LEDGER_CUSTOM_KEY, JSON.stringify(arr)); }
-  function ledgerAllRows() { return [...getLedgerCustom(), ...LEDGER_SAMPLE]; }
+
+  function ledgerAllRows() {
+    const learned = getLedgerLearned();
+    return [...getLedgerCustom(), ...LEDGER_SAMPLE].map((r) => {
+      const rule = learned[r.vendor];
+      if (!rule || r.status !== "review") return r;
+      return {
+        ...r,
+        category: rule.category,
+        status: "done",
+        aiNote: `이전에 "${escapeHtml(r.vendor)}" 거래를 ${rule.category}(으)로 직접 분류하신 내역을 학습해 자동 적용했습니다.`,
+      };
+    });
+  }
 
   function ledgerToast(msg) {
     let box = $("ledgerToastBox");
@@ -3636,7 +2537,18 @@
           <div class="ts-ledger-detail-amt">${escapeHtml(selected.desc)}</div>
 
           <div class="ts-ledger-detail-row"><div class="k">거래일</div><div class="v">${escapeHtml(selected.date.replace(/-/g, "."))}</div></div>
-          <div class="ts-ledger-detail-row"><div class="k">분류</div><div class="v">${selected.type === "income" ? "수입" : "지출"} &gt; ${escapeHtml(selected.category)}</div></div>
+          <div class="ts-ledger-detail-row">
+            <div class="k">분류</div>
+            ${ledgerReclassifyOpen ? `
+              <div class="ts-ledger-reclassify-row">
+                <select id="ledgerReclassifySelect">
+                  ${LEDGER_CATEGORIES.map((c) => `<option value="${escapeHtml(c)}" ${c === selected.category ? "selected" : ""}>${escapeHtml(c)}</option>`).join("")}
+                </select>
+                <button class="ts-ledger-quick-btn primary" type="button" id="ledgerReclassifySave">저장</button>
+                <button class="ts-card-link" type="button" id="ledgerReclassifyCancel">취소</button>
+              </div>
+            ` : `<div class="v">${selected.type === "income" ? "수입" : "지출"} &gt; ${escapeHtml(selected.category)}</div>`}
+          </div>
           <div class="ts-ledger-detail-row"><div class="k">결제수단</div><div class="v">${escapeHtml(selected.method)}</div></div>
           <div class="ts-ledger-detail-row"><div class="k">증빙</div><div class="v">${selected.evidence ? escapeHtml(selected.evidence) : "없음"}</div></div>
           <div class="ts-ledger-detail-row"><div class="k">세금 처리</div><div class="v">${escapeHtml(selected.taxNote)}</div></div>
@@ -3646,15 +2558,49 @@
           <div class="ts-ledger-detail-actions">
             <button class="ts-ledger-detail-btn" type="button" id="ledgerBtnReclassify">분류 수정</button>
             <button class="ts-ledger-detail-btn" type="button" id="ledgerBtnAddEvidence">증빙 추가</button>
+            <button class="ts-ledger-detail-btn" type="button" id="ledgerBtnSaveRecurring">🔁 반복거래로 저장</button>
           </div>
         </div>
       `;
+      $("ledgerReclassifySave")?.addEventListener("click", () => {
+        const newCategory = $("ledgerReclassifySelect")?.value || selected.category;
+        const learned = getLedgerLearned();
+        learned[selected.vendor] = { category: newCategory, type: selected.type };
+        setLedgerLearned(learned);
+        ledgerReclassifyOpen = false;
+        ledgerToast(`"${selected.vendor}" 거래를 ${newCategory}(으)로 분류했어요. 같은 거래처의 다른 미분류 거래에도 자동 적용됩니다.`);
+        renderDashLedger();
+      });
+      $("ledgerReclassifyCancel")?.addEventListener("click", () => {
+        ledgerReclassifyOpen = false;
+        renderDashLedger();
+      });
+      $("ledgerBtnSaveRecurring")?.addEventListener("click", () => {
+        const recurring = getLedgerRecurring();
+        const dup = recurring.some((t) => t.vendor === selected.vendor && t.desc === selected.desc && t.amount === selected.amount);
+        if (dup) {
+          ledgerToast("이미 반복거래로 저장돼 있어요.");
+          return;
+        }
+        recurring.push({
+          id: `recur_${Date.now()}`,
+          vendor: selected.vendor,
+          desc: selected.desc,
+          amount: selected.amount,
+          type: selected.type,
+          category: selected.category,
+          method: selected.method,
+        });
+        setLedgerRecurring(recurring);
+        ledgerToast("반복거래로 저장했어요. 다음 달에도 한 번에 등록할 수 있어요.");
+      });
       return;
     }
 
     const missingCount = rows.filter((r) => !r.evidence).length;
     const taxDocMissing = rows.filter((r) => r.status === "review" && r.evidence).length;
     const purposeUnclear = rows.filter((r) => r.status === "review" && !r.evidence && r.category === "기타").length;
+    const recurring = getLedgerRecurring();
 
     side.innerHTML = `
       <div class="ts-ledger-side-card">
@@ -3665,6 +2611,24 @@
         <button class="ts-ledger-side-link" type="button" id="ledgerLinkMissing" style="margin-top:10px;">누락 증빙 확인 →</button>
       </div>
       <div class="ts-ledger-side-card">
+        <h4>🔁 반복거래</h4>
+        ${recurring.length === 0
+          ? `<div class="empty-note">거래 상세에서 "반복거래로 저장"을 누르면 월세·급여처럼 매달 반복되는 거래를 여기서 한 번에 등록할 수 있어요.</div>`
+          : recurring.map((t) => `
+              <div class="ts-ledger-recurring-row" data-recurring-id="${escapeHtml(t.id)}">
+                <div>
+                  <div class="ts-ledger-recurring-vendor">${escapeHtml(t.vendor)}</div>
+                  <div class="ts-ledger-recurring-amt">${t.amount > 0 ? "+" : "-"}${fmtWonFull(Math.abs(t.amount))}</div>
+                </div>
+                <div class="ts-ledger-recurring-actions">
+                  <button class="ts-ledger-side-link" type="button" data-recurring-add="${escapeHtml(t.id)}">추가</button>
+                  <button class="ts-ledger-recurring-del" type="button" data-recurring-del="${escapeHtml(t.id)}" aria-label="삭제">✕</button>
+                </div>
+              </div>
+            `).join("")
+        }
+      </div>
+      <div class="ts-ledger-side-card">
         <h4>8월 장부 준비도</h4>
         <div class="ts-ledger-progress-ring">91%</div>
         <div class="ts-ledger-check-item"><span class="ok">✅</span>거래 분류 완료</div>
@@ -3673,6 +2637,41 @@
         <button class="ts-ledger-side-link" type="button" id="ledgerBtnCloseMonth" style="margin-top:6px;">장부 마감 준비하기</button>
       </div>
     `;
+
+    side.querySelectorAll("[data-recurring-add]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-recurring-add");
+        const t = getLedgerRecurring().find((x) => x.id === id);
+        if (!t) return;
+        const today = new Date();
+        const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+        const custom = getLedgerCustom();
+        custom.push({
+          id: `custom_${Date.now()}`,
+          date: dateStr,
+          vendor: t.vendor,
+          desc: t.desc,
+          amount: t.amount,
+          type: t.type,
+          category: t.category,
+          evidence: null,
+          method: t.method,
+          status: "review",
+          taxNote: "반복거래로 등록된 거래입니다.",
+          aiNote: "반복거래 템플릿에서 자동으로 추가됐어요. 이번 달 금액이 맞는지 확인해주세요.",
+        });
+        setLedgerCustom(custom);
+        ledgerToast(`${t.vendor} 거래를 이번 달에 추가했어요.`);
+        renderDashLedger();
+      });
+    });
+    side.querySelectorAll("[data-recurring-del]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-recurring-del");
+        setLedgerRecurring(getLedgerRecurring().filter((x) => x.id !== id));
+        renderDashLedger();
+      });
+    });
   }
 
   function bindLedgerEvents() {
@@ -3703,7 +2702,10 @@
       if (sel) sel.value = "review";
       renderDashLedger();
     });
-    $("ledgerBtnExcel")?.addEventListener("click", () => ledgerToast("데모 화면에서는 엑셀 업로드가 지원되지 않아요."));
+    $("ledgerBtnExcel")?.addEventListener("click", () => {
+      setTab("input");
+      $("excelImportCard")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
     $("ledgerBtnReceipt")?.addEventListener("click", () => ledgerToast("데모 화면에서는 영수증 업로드가 지원되지 않아요."));
     $("ledgerBtnAdd")?.addEventListener("click", openLedgerAddRow);
 
@@ -3716,14 +2718,18 @@
       tr.addEventListener("click", () => {
         const id = tr.getAttribute("data-ledger-row");
         ledgerSelectedId = ledgerSelectedId === id ? null : id;
+        ledgerReclassifyOpen = false;
         renderDashLedger();
       });
     });
   }
 
   function bindLedgerSideActions() {
-    $("ledgerDetailClose")?.addEventListener("click", () => { ledgerSelectedId = null; renderDashLedger(); });
-    $("ledgerBtnReclassify")?.addEventListener("click", () => ledgerToast("분류 수정 기능은 준비 중이에요."));
+    $("ledgerDetailClose")?.addEventListener("click", () => { ledgerSelectedId = null; ledgerReclassifyOpen = false; renderDashLedger(); });
+    $("ledgerBtnReclassify")?.addEventListener("click", () => {
+      ledgerReclassifyOpen = true;
+      renderDashLedger();
+    });
     $("ledgerBtnAddEvidence")?.addEventListener("click", () => ledgerToast("증빙 추가 기능은 준비 중이에요."));
     $("ledgerLinkMissing")?.addEventListener("click", () => {
       ledgerFilter.evidence = "none";
@@ -3944,6 +2950,37 @@
       }
     }
 
+    // 간이과세자 ↔ 일반과세자 전환 시뮬레이션
+    const simBox = $("taxTypeSimBox");
+    if (simBox) {
+      const sim = lastResponse?.result?.tax_estimate?.breakdown?.taxpayer_type_simulation;
+      if (!sim) {
+        simBox.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
+      } else {
+        const typeLabel = (t) => (t === "SIMPLE" ? "간이과세자" : "일반과세자");
+        const currentYear = safeNumber(sim.current_vat_due_year);
+        const altYear = safeNumber(sim.alt_vat_due_year);
+        const diff = altYear - currentYear;
+        const better = diff < 0;
+        simBox.innerHTML = `
+          <div class="ts-tax-ba">
+            <div class="ts-tax-ba-col"><div class="l">현재: ${escapeHtml(typeLabel(sim.current_type))}</div><div class="v">${fmtWonFull(currentYear)}</div></div>
+            <div class="ts-tax-ba-arrow">vs</div>
+            <div class="ts-tax-ba-col ${better ? "after" : ""}"><div class="l">${escapeHtml(typeLabel(sim.alt_type))}라면</div><div class="v">${fmtWonFull(altYear)}</div></div>
+          </div>
+          <div class="ts-tax-ba-note">
+            ${diff === 0
+              ? "두 유형의 연 부가세 부담이 동일하게 추정됩니다."
+              : better
+                ? `${escapeHtml(typeLabel(sim.alt_type))}였다면 연 부가세를 약 ${fmtWonFull(Math.abs(diff))} 더 적게 낼 것으로 추정됩니다.`
+                : `${escapeHtml(typeLabel(sim.alt_type))}였다면 연 부가세를 약 ${fmtWonFull(Math.abs(diff))} 더 많이 낼 것으로 추정됩니다. 현재 ${escapeHtml(typeLabel(sim.current_type))} 분류가 유리합니다.`
+            }
+          </div>
+          <div class="ts-tax-ba-note" style="margin-top:6px; opacity:.7;">※ 실제 과세유형은 직전연도 매출 기준으로 법적으로 결정되며, 전환 시 매입세액공제 방식도 함께 바뀝니다. 참고용 추정치입니다.</div>
+        `;
+      }
+    }
+
     // 신고 자료 준비
     const docsBox = $("taxDocsList");
     if (docsBox) {
@@ -3995,6 +3032,74 @@
 
   function difficultyOf(o) {
     return o.applicability === "적용 가능성 높음" ? "쉬움" : "보통";
+  }
+
+  function getSaveScenarios() {
+    try { return JSON.parse(localStorage.getItem(LS_SAVE_SCENARIOS_KEY) || "[]"); } catch { return []; }
+  }
+  function setSaveScenarios(arr) { localStorage.setItem(LS_SAVE_SCENARIOS_KEY, JSON.stringify(arr)); }
+
+  function getEvidenceReminder() {
+    try { return JSON.parse(localStorage.getItem(LS_EVIDENCE_REMINDER_KEY) || "{}"); } catch { return {}; }
+  }
+  function setEvidenceReminder(obj) { localStorage.setItem(LS_EVIDENCE_REMINDER_KEY, JSON.stringify(obj)); }
+
+  function todayStrLocal() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  function checkEvidenceReminder(missingCount) {
+    const pref = getEvidenceReminder();
+    if (!pref.enabled || typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    if (missingCount <= 0) return;
+    if (pref.lastShownDate === todayStrLocal()) return;
+
+    try {
+      const n = new Notification("TS · 증빙 누락 알림", {
+        body: `장부에서 증빙이 빠진 거래가 ${missingCount}건 있어요. 확인해보세요.`,
+      });
+      n.onclick = () => { window.focus(); };
+    } catch (e) {
+      console.warn("[TS] notification failed:", e);
+    }
+    setEvidenceReminder({ ...pref, lastShownDate: todayStrLocal() });
+  }
+
+  function renderEvidenceReminderBtn() {
+    const btn = $("saveEvidenceReminderBtn");
+    if (!btn) return;
+    const pref = getEvidenceReminder();
+    const enabled = !!pref.enabled && typeof Notification !== "undefined" && Notification.permission === "granted";
+    btn.textContent = enabled ? "🔔 알림 켜짐" : "🔕 알림 받기";
+  }
+
+  function toggleEvidenceReminder() {
+    if (typeof Notification === "undefined") {
+      ledgerToast("이 브라우저는 알림을 지원하지 않아요.");
+      return;
+    }
+    if (Notification.permission === "granted") {
+      const cur = getEvidenceReminder();
+      const next = !cur.enabled;
+      setEvidenceReminder({ ...cur, enabled: next });
+      ledgerToast(next ? "증빙 누락 알림을 켰어요." : "증빙 누락 알림을 껐어요.");
+      renderDashSaveHelper();
+      return;
+    }
+    if (Notification.permission === "denied") {
+      ledgerToast("브라우저 알림 권한이 차단되어 있어요. 브라우저 설정에서 허용해주세요.");
+      return;
+    }
+    Notification.requestPermission().then((perm) => {
+      if (perm === "granted") {
+        setEvidenceReminder({ enabled: true, lastShownDate: null });
+        ledgerToast("증빙 누락 알림을 켰어요.");
+      } else {
+        ledgerToast("알림 권한이 허용되지 않았어요.");
+      }
+      renderDashSaveHelper();
+    });
   }
 
   function renderDashSaveHelper() {
@@ -4110,6 +3215,7 @@
               </label>
             `).join("")}
           </div>
+          <button class="ts-card-link" type="button" id="saveSimSaveBtn" style="margin-top:10px;">🔖 이 시나리오 저장하기 →</button>
         `;
         const updateSim = () => {
           const checkedTotal = allOpps
@@ -4127,10 +3233,34 @@
           });
         });
         updateSim();
+
+        $("saveSimSaveBtn")?.addEventListener("click", () => {
+          const checkedOpps = allOpps.filter((o) => saveSimCheckedIds.has(o.opportunity_id));
+          if (checkedOpps.length === 0) {
+            ledgerToast("적용할 절세 항목을 먼저 선택해주세요.");
+            return;
+          }
+          const monthKey = String(inpMonth?.value || "").trim();
+          const checkedTotal = checkedOpps.reduce((s, o) => s + (o.expected_credit || 0), 0);
+          const scenario = {
+            id: `scn_${Date.now()}`,
+            month: monthKey || "-",
+            savedAt: new Date().toISOString(),
+            items: checkedOpps.map((o) => ({ title: o.title, amount: o.expected_credit || 0 })),
+            total: checkedTotal,
+          };
+          const scenarios = getSaveScenarios().filter((s) => s.month !== monthKey);
+          scenarios.unshift(scenario);
+          setSaveScenarios(scenarios.slice(0, 24));
+          ledgerToast(`${monthKey || "이번 달"} 절세 시나리오를 저장했어요.`);
+          renderDashSaveHelper();
+        });
       }
     }
 
     // 놓친 증빙 찾기
+    renderEvidenceReminderBtn();
+    checkEvidenceReminder(missingRows.length);
     const evBox = $("saveEvidenceList");
     if (evBox) {
       const top5 = [...missingRows].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 5);
@@ -4170,22 +3300,27 @@
       if (statsEl) statsEl.innerHTML += `<span class="sep">·</span><span>절세 준비도 <b>${readyPct}%</b></span>`;
     }
 
-    // 절세 이력
-    const histDemo = [
-      { period: "2026.08", item: "카드매출 공제", amount: 280000 },
-      { period: "2026.07", item: "비용 증빙 보완", amount: 420000 },
-      { period: "2026.06", item: "공제 적용", amount: 310000 },
-    ];
+    // 절세 이력 (저장된 시나리오 기반 — 실제 사용자가 "시나리오 저장"을 누른 기록만 표시)
+    const savedScenarios = getSaveScenarios()
+      .slice()
+      .sort((a, b) => (a.month < b.month ? 1 : -1));
     const histBody = $("saveHistoryBody");
     if (histBody) {
-      histBody.innerHTML = histDemo.map((h) => `
-        <tr><td>${escapeHtml(h.period)}</td><td>${escapeHtml(h.item)}</td><td>${fmtWonFull(h.amount)}</td></tr>
-      `).join("");
+      histBody.innerHTML = savedScenarios.length === 0
+        ? `<tr><td colspan="3" class="empty-note" style="padding:14px;">아직 저장된 절세 시나리오가 없습니다. 위 "절세 시뮬레이션"에서 항목을 선택하고 저장해보세요.</td></tr>`
+        : savedScenarios.map((s) => {
+            const itemLabel = s.items.length <= 2
+              ? s.items.map((it) => it.title).join(", ")
+              : `${s.items[0].title} 외 ${s.items.length - 1}건`;
+            return `<tr><td>${escapeHtml(s.month)}</td><td>${escapeHtml(itemLabel)}</td><td>${fmtWonFull(s.total)}</td></tr>`;
+          }).join("");
     }
     const histSum = $("saveHistorySummary");
     if (histSum) {
-      const cum = histDemo.reduce((s, h) => s + h.amount, 0);
-      histSum.textContent = `올해 절세 효과 누적 ${fmtWonFull(cum)}`;
+      const cum = savedScenarios.reduce((s, h) => s + (h.total || 0), 0);
+      histSum.textContent = savedScenarios.length === 0
+        ? "아직 저장된 절세 기록이 없습니다."
+        : `저장된 시나리오 절세 효과 합계 ${fmtWonFull(cum)}`;
     }
   }
 
@@ -4223,9 +3358,8 @@
     }
 
     const emptyIds = [
-      "reportHeadlineCard", "reportKpiRow", "reportHealthBox", "reportChangeList", "reportFlowBox",
-      "reportBenchTable", "reportGoodList", "reportIssueList", "reportOppRow", "reportSimBox",
-      "reportGoalList", "reportActionList",
+      "reportHeadlineCard", "reportChangeList", "reportFlowBox",
+      "reportBenchTable", "reportSimBox", "reportGoalList",
     ];
     if (!analysis || !cur) {
       emptyIds.forEach((id) => { const el = $(id); if (el) el.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`; });
@@ -4237,7 +3371,6 @@
     const laborItem = findItem("LABOR_RATIO");
     const materialItem = findItem("MATERIAL_RATIO");
     const profitItem = findItem("PROFIT_RATIO");
-    const costItem = findItem("COST_RATIO");
 
     const pctDelta = (a, b) => (b == null ? null : ((a - b) / (Math.abs(b) || 1)) * 100);
     const salesPct = pctDelta(cur.sales, prev?.sales);
@@ -4256,58 +3389,7 @@
       `;
     }
 
-    // 1. 핵심 KPI 5개
-    const kpiRow = $("reportKpiRow");
-    if (kpiRow) {
-      const tb = analysis?.tax_brief || {};
-      const taxMonth = safeNumber(tb?.vat?.due_month || 0) + (safeNumber(tb?.income_tax?.due_year || 0) / 12);
-      const profitRatioPp = prev ? (safeNumber(cur.profit_ratio) - safeNumber(prev.profit_ratio)) * 100 : null;
-      const rows = [
-        { label: "매출", value: fmtWonFull(cur.sales), chip: salesPct != null ? reportDeltaChip(fmtPctSigned(salesPct), salesPct < 0) : reportDeltaChip("—") },
-        { label: "총비용", value: fmtWonFull(cur.total_cost), chip: costPct != null ? reportDeltaChip(fmtPctSigned(costPct), costPct > 0) : reportDeltaChip("—") },
-        { label: "영업이익", value: fmtWonFull(cur.profit), chip: profitPct != null ? reportDeltaChip(fmtPctSigned(profitPct), profitPct < 0) : reportDeltaChip("—") },
-        { label: "영업이익률", value: ratioToPercent(cur.profit_ratio), chip: profitRatioPp != null ? reportDeltaChip(ppText(profitRatioPp), profitRatioPp < 0) : reportDeltaChip("—") },
-        { label: "예상 세금(월)", value: fmtWonFull(taxMonth), chip: reportDeltaChip("—") },
-      ];
-      kpiRow.innerHTML = rows.map((r) => `
-        <div class="ts-dash-kpi-card">
-          <div class="ts-dash-kpi-label">${escapeHtml(r.label)}</div>
-          <div class="ts-dash-kpi-value">${r.value}</div>
-          ${r.chip}
-        </div>
-      `).join("");
-    }
-
-    // 2. TS 경영 건강도
-    const healthBox = $("reportHealthBox");
-    if (healthBox) {
-      const score = data?.health?.score_100 ?? analysis?.kpi?.score_100 ?? null;
-      const tone = data?.health?.grade || gradeTone(analysis?.kpi?.grade);
-      const safetyRatio = (cur.margin_of_safety != null && cur.breakeven_sales) ? (cur.margin_of_safety / cur.breakeven_sales) * 100 : 0;
-      const salesStability = Math.max(0, Math.min(100, Math.round(60 + safetyRatio)));
-      const costEfficiency = Math.max(0, Math.min(100, Math.round(85 - ((costItem?.diff_pp || 0) * 1.5 + (laborItem?.diff_pp || 0) * 1.5))));
-      const profitability = Math.max(0, Math.min(100, Math.round(75 + (profitItem?.diff_pp || 0) * 3)));
-      const rows = ledgerAllRows();
-      const missingCount = rows.filter((r) => !r.evidence).length;
-      const oppEligibleCount = (Array.isArray(data?.opportunities) ? data.opportunities : []).filter((o) => o.category === "절세 기회" && o.eligible).length;
-      const taxReadiness = Math.round(([true, missingCount === 0, oppEligibleCount === 0, false].filter(Boolean).length / 4) * 100);
-
-      healthBox.innerHTML = `
-        <div class="ts-report-health-top">
-          <div class="ts-report-health-score">${score != null ? score : "-"} <span>/ 100</span></div>
-          <div class="ts-report-health-tone">${escapeHtml(tone || "-")}</div>
-        </div>
-        <div class="ts-report-health-grid">
-          <div class="ts-report-health-item"><span>매출 안정성</span><b>${salesStability}점</b></div>
-          <div class="ts-report-health-item"><span>비용 효율성</span><b>${costEfficiency}점</b></div>
-          <div class="ts-report-health-item"><span>수익성</span><b>${profitability}점</b></div>
-          <div class="ts-report-health-item"><span>세무 준비도</span><b>${taxReadiness}점</b></div>
-        </div>
-        <div class="ts-tax-ba-note">매출 자체는 ${salesStability >= 60 ? "안정적이지만" : "불안정하고"} 인건비 등 비용 증가 속도가 빨라 수익성이 ${profitability >= 60 ? "양호한 편입니다." : "낮아지고 있습니다."}</div>
-      `;
-    }
-
-    // 3. 전월 대비 변화
+    // 전월 대비 변화
     const changeList = $("reportChangeList");
     const changeNote = $("reportChangeNote");
     if (changeList) {
@@ -4373,72 +3455,7 @@
       }
     }
 
-    // 6. 잘한 점 / 문제점
-    const goodBox = $("reportGoodList");
-    if (goodBox) {
-      const diagnosis = Array.isArray(data?.diagnosis) ? data.diagnosis : [];
-      const goods = diagnosis.filter((d) => d.severity === "GREEN").map((d) => d.ai_comment || d.title);
-      if (salesPct != null && Math.abs(salesPct) < 2) goods.push("매출은 전월 수준을 유지했습니다.");
-      if (safeNumber(cur.card_sales_amount) > 0 || safeNumber(cur.cash_receipt_amount) > 0) goods.push("카드·현금영수증 매출 자료가 정상 반영됐습니다.");
-      const oppCount = (Array.isArray(data?.opportunities) ? data.opportunities : []).filter((o) => o.category === "절세 기회" && o.eligible).length;
-      if (oppCount > 0) goods.push(`절세 기회 ${oppCount}건을 발견했습니다.`);
-      const top3 = goods.slice(0, 3);
-      goodBox.innerHTML = top3.length === 0
-        ? `<div class="empty-note">계산 후 표시됩니다.</div>`
-        : top3.map((g) => `<div class="ts-report-good-item">✅ ${escapeHtml(g)}</div>`).join("");
-    }
-
-    const issueBox = $("reportIssueList");
-    if (issueBox) {
-      const riskItems = items.filter((x) => ["RISK", "WARN"].includes(String(x?.level).toUpperCase()) && ["LABOR_RATIO", "MATERIAL_RATIO", "PROFIT_RATIO", "RENT_RATIO"].includes(String(x?.metric)))
-        .sort((a, b) => Math.abs(Number(b?.diff_pp || 0)) - Math.abs(Number(a?.diff_pp || 0)))
-        .slice(0, 3);
-      if (riskItems.length === 0) {
-        issueBox.innerHTML = `<div class="empty-note">특별한 위험 신호가 없습니다.</div>`;
-      } else {
-        const annualRevenue = safeNumber(cur.sales) * 12;
-        issueBox.innerHTML = riskItems.map((it, i) => {
-          const impact = i === 0 && annualRevenue > 0 ? Math.round(annualRevenue * (Math.abs(Number(it.diff_pp || 0)) / 100)) : 0;
-          return `
-            <div class="ts-report-issue-item">
-              <div class="ts-report-issue-top"><span class="rank">${i + 1}순위</span><span>${escapeHtml(metricLabel(it.metric))}</span></div>
-              <div class="ts-report-issue-diff">업종 평균보다 ${ppText(it.diff_pp)}</div>
-              ${impact > 0 ? `<div class="ts-report-issue-impact">현재 추세가 유지되면 연간 약 ${fmtWonFull(impact)}의 추가 비용 부담이 예상됩니다.</div>` : ""}
-            </div>
-          `;
-        }).join("");
-      }
-    }
-
-    // 7. TS가 찾은 기회
-    const oppRow = $("reportOppRow");
-    if (oppRow) {
-      const opps = Array.isArray(data?.opportunities) ? data.opportunities : [];
-      const taxSaveTotal = opps.filter((o) => o.category === "절세 기회" && o.eligible).reduce((s, o) => s + (o.expected_credit || 0), 0);
-      const overCostItem = items.filter((x) => ["COST_RATIO", "LABOR_RATIO"].includes(String(x?.metric)) && Number(x?.diff_pp || 0) > 0)
-        .sort((a, b) => Number(b?.diff_pp || 0) - Number(a?.diff_pp || 0))[0];
-      const costSaveEstimate = (overCostItem && cur.sales * 12 > 0) ? Math.round((cur.sales * 12) * (Number(overCostItem.diff_pp) / 100)) : 0;
-      const laborOption = (data?.scenarios?.options || []).find((o) => String(o.action_id || "").startsWith("LABOR"));
-      oppRow.innerHTML = `
-        <div class="ts-home-opp-card blue">
-          <div class="ts-home-opp-label">절세</div>
-          <div class="ts-home-opp-value">${taxSaveTotal > 0 ? fmtWonFull(taxSaveTotal) : "-"}</div>
-          <div class="ts-home-opp-note">TS가 찾은 세액공제 기회예요.</div>
-        </div>
-        <div class="ts-home-opp-card amber">
-          <div class="ts-home-opp-label">비용 절감</div>
-          <div class="ts-home-opp-value">${costSaveEstimate > 0 ? `연 ${fmtWonFull(costSaveEstimate)}` : "-"}</div>
-          <div class="ts-home-opp-note">${overCostItem ? escapeHtml(metricLabel(overCostItem.metric)) + " 조정 가능" : "현재 비용 구조는 안정적이에요."}</div>
-        </div>
-        <div class="ts-home-opp-card purple">
-          <div class="ts-home-opp-label">인력 운영 개선</div>
-          <div class="ts-home-opp-value">${laborOption ? `월 ${fmtWonFull(laborOption.profit_delta)}` : "-"}</div>
-          <div class="ts-home-opp-note">${laborOption ? escapeHtml(laborOption.label) + " 시뮬레이션" : "계산 후 표시됩니다."}</div>
-        </div>
-      `;
-    }
-
-    // 8. 개선 시뮬레이션
+    // 개선 시뮬레이션
     const simBox = $("reportSimBox");
     if (simBox) {
       const options = data?.scenarios?.options || [];
@@ -4462,7 +3479,7 @@
       }
     }
 
-    // 9. 다음 달 목표
+    // 다음 달 목표
     const goalBox = $("reportGoalList");
     if (goalBox) {
       const goals = [laborItem, materialItem, profitItem].filter(Boolean).map((it) => ({
@@ -4480,29 +3497,7 @@
           `).join("");
     }
 
-    // 10. 이번 달 실행 과제
-    const actionBox = $("reportActionList");
-    if (actionBox) {
-      const actions = Array.isArray(analysis?.actions) ? analysis.actions.slice(0, 3) : [];
-      const deadlineTag = { P1: "오늘", P2: "7일", P3: "30일" };
-      const state = getActionCheckState();
-      actionBox.innerHTML = actions.length === 0
-        ? `<div class="empty-note">계산 후 표시됩니다.</div>`
-        : actions.map((a) => {
-            const key = actionKey(a);
-            const priority = String(a?.priority || "P?").toUpperCase();
-            return `
-              <div class="ts-home-todo-item">
-                <input type="checkbox" data-action-key="${escapeHtml(key)}" ${state[key] ? "checked" : ""} />
-                <span class="ts-home-todo-tag">${escapeHtml(deadlineTag[priority] || "확인")}</span>
-                <span style="flex:1;">${escapeHtml(a?.title || "실행 액션")}</span>
-              </div>
-            `;
-          }).join("");
-      bindActionCheckboxes();
-    }
-
-    // 11. 최근 추이
+    // 최근 추이
     renderReportTrendChart(reportTrendMetric);
   }
 
@@ -4526,9 +3521,9 @@
     canvas.style.display = "block";
 
     const specs = {
-      sales: { label: "매출", data: monthly.map((m) => safeNumber(m.sales)), fmt: (v) => (v / 10000) + "만" },
-      cost: { label: "비용", data: monthly.map((m) => safeNumber(m.total_cost)), fmt: (v) => (v / 10000) + "만" },
-      profit: { label: "영업이익", data: monthly.map((m) => safeNumber(m.profit)), fmt: (v) => (v / 10000) + "만" },
+      sales: { label: "매출", data: monthly.map((m) => safeNumber(m.sales)), fmt: (v) => formatWon(v) + "원" },
+      cost: { label: "비용", data: monthly.map((m) => safeNumber(m.total_cost)), fmt: (v) => formatWon(v) + "원" },
+      profit: { label: "영업이익", data: monthly.map((m) => safeNumber(m.profit)), fmt: (v) => formatWon(v) + "원" },
       profit_ratio: { label: "이익률", data: monthly.map((m) => safeNumber(m.profit_ratio) * 100), fmt: (v) => v.toFixed(0) + "%" },
     };
     const spec = specs[metric] || specs.sales;
@@ -4602,10 +3597,7 @@
       ["ready"];
     setTags(tags);
 
-    renderAnalysisCards(resp);
-
-    preJson.textContent = JSON.stringify(resp, null, 2);
-    preMeta.textContent = JSON.stringify({ meta, kpi }, null, 2);
+    renderDashboardHome();
   }
 
   async function runCalc(forceMode = null) {
@@ -4695,27 +3687,7 @@
         console.warn("[TS] v2 opportunity fetch failed:", e);
       }
 
-      try {
-        lastRecords = await fetchRecords();
-        console.log("[TS] records loaded:", lastRecords.length);
-      } catch (recordsErr) {
-        console.warn("[TS] records load failed:", recordsErr);
-        lastRecords = [];
-      }
-      renderHistoryTrend(lastRecords);
-
       setTab("result");
-
-      preJson.textContent = JSON.stringify(data, null, 2);
-      preMeta.textContent = JSON.stringify(
-        {
-          meta: data?.meta || data?.debug || {},
-          kpi: data?.kpi || {},
-          run_id: runId
-        },
-        null,
-        2
-      );
 
       sumSummary.textContent = "계산 완료";
       sumSave.textContent = data?.saved ? "저장됨" : "-";
@@ -4733,11 +3705,6 @@
       } catch (renderErr) {
         console.error("[TS] render error:", renderErr, data);
         showError(`응답 렌더링 중 오류: ${renderErr?.message || renderErr}`);
-
-        reportExecutive.innerHTML = `<div class="empty-note">렌더링 오류가 발생했습니다.</div>`;
-        reportTaxBrief.innerHTML = `<div class="empty-note">렌더링 오류가 발생했습니다.</div>`;
-        reportRisk.innerHTML = `<div class="empty-note">렌더링 오류가 발생했습니다.</div>`;
-        reportActions.innerHTML = `<div class="empty-note">렌더링 오류가 발생했습니다.</div>`;
       }
     } catch (e) {
       console.error("[TS] runCalc fatal error:", e);
@@ -4775,7 +3742,6 @@
   // v2 Opportunity Finder / Action Simulator (기존 입력값 재사용)
   // ============================================================
   const fmtWonFull = (v) => (v == null ? "-" : `${Math.round(v).toLocaleString("ko-KR")}원`);
-  const firstSentence = (s) => String(s || "").split(/(?<=[.!?])\s+/)[0] || "";
   let v2LastMonthly = null;
 
   function buildV2BusinessInfo(payload) {
@@ -4829,20 +3795,13 @@
       body: JSON.stringify({ business_info, monthly }),
     });
     if (!res.ok) {
-      $("oppTotalCredit").textContent = "-";
-      $("oppList").innerHTML = `<div class="empty-note">절세 기회 분석에 필요한 정보가 부족합니다. (매출·인건비 등 기본 입력을 확인해주세요)</div>`;
+      lastV2Data = null;
+      renderDashboardHome();
       return;
     }
     const data = await res.json();
     lastV2Data = data;
     if (Array.isArray(data.monthly) && data.monthly.length) v2LastMonthly = data.monthly;
-    renderV2WowBanner(data);
-    renderV2Diagnosis(data);
-    renderV2Opportunities(data);
-    renderV2ScenarioCards(data);
-    renderV2Simulator(data);
-    renderV2History(data);
-    renderTsOppSummary(data);
     renderDashboardHome();
   }
 
@@ -4851,156 +3810,15 @@
   async function runV2Sample() {
     const base = getApiBase();
     const res = await fetch(`${base}/api/v2/sample`);
-    if (!res.ok) return;
+    if (!res.ok) {
+      lastV2Data = null;
+      renderDashboardHome();
+      return;
+    }
     const data = await res.json();
     v2LastMonthly = data.monthly;
     lastV2Data = data;
-    renderV2WowBanner(data);
-    renderV2Diagnosis(data);
-    renderV2Opportunities(data);
-    renderV2ScenarioCards(data);
-    renderV2Simulator(data);
-    renderV2History(data);
-    renderTsOppSummary(data);
     renderDashboardHome();
-  }
-
-  function renderV2History(data) {
-    const rows = (data.monthly || []).map((m) => ({
-      month: m.month,
-      revenue_vat_included: m.sales,
-      cost_vat_included: (m.material_cost || 0) + (m.rent || 0) + (m.other_cost || 0),
-      labor_cost: m.labor_cost,
-    }));
-    renderHistoryTrend(rows);
-  }
-
-  function renderV2WowBanner(data) {
-    const box = $("wowBanner");
-    if (!data.top_change) { box.style.display = "none"; return; }
-    box.style.display = "block";
-    $("wowHeadline").textContent = data.top_change.headline;
-    $("wowDetail").textContent = data.top_change.detail;
-  }
-
-  function renderV2Diagnosis(data) {
-    const grid = $("aiDiagGrid");
-    grid.innerHTML = "";
-    (data.diagnosis || []).forEach((d) => {
-      const valueLine = d.value_from ? `${d.value_from} → ${d.value_to}` : d.value_to;
-      grid.insertAdjacentHTML(
-        "beforeend",
-        `<div class="diag-card">
-          <div class="icon">${d.icon}</div>
-          <div class="val">${escapeHtml(valueLine)}</div>
-          <div class="lbl">${escapeHtml(d.title)}</div>
-          <div class="cmt">${escapeHtml(firstSentence(d.ai_comment))}</div>
-        </div>`
-      );
-    });
-  }
-
-  function renderV2ScenarioCards(data) {
-    const row = $("simCardsRow");
-    row.innerHTML = "";
-    const options = data.scenarios?.options || [];
-    const recommendedId = data.scenarios?.recommended?.action_id;
-    options.forEach((opt) => {
-      const isBest = opt.action_id === recommendedId;
-      row.insertAdjacentHTML(
-        "beforeend",
-        `<div class="sim-mini-card ${isBest ? "best" : ""}">
-          <div class="lbl">${escapeHtml(opt.label)}</div>
-          <div class="delta">+${fmtWonFull(opt.profit_delta)}</div>
-        </div>`
-      );
-    });
-    const recoBox = $("simRecoBox");
-    if (data.scenarios?.recommendation_text) {
-      recoBox.style.display = "flex";
-      $("simRecoText").textContent = data.scenarios.recommendation_text;
-    } else {
-      recoBox.style.display = "none";
-    }
-  }
-
-  function renderV2Opportunities(data) {
-    const totalCredit = (data.opportunities || [])
-      .filter((o) => o.category === "절세 기회" && o.eligible)
-      .reduce((sum, o) => sum + (o.expected_credit || 0), 0);
-    $("oppTotalCredit").textContent = fmtWonFull(totalCredit);
-
-    const list = $("oppList");
-    list.innerHTML = "";
-    data.opportunities.forEach((o) => {
-      let html = `<div class="opp-card">`;
-      html += `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3 style="margin:0;font-size:15.5px">${escapeHtml(o.title)}</h3><span class="${levelChipClass(o.applicability === "적용 가능성 높음" ? "GOOD" : "WARN")}">${escapeHtml(o.applicability)}</span></div>`;
-
-      if (o.category === "경영 임계점") {
-        html += `<div class="amt-row">
-          <div><div class="lbl">현재 매출</div><div class="val">${fmtWonFull(o.current_sales)}</div></div>
-          <div><div class="lbl">손익분기점</div><div class="val val-green">${fmtWonFull(o.breakeven_sales)}</div></div>
-        </div>`;
-      } else {
-        html += `<div class="amt-row">
-          <div><div class="lbl">${escapeHtml(o.target_amount_label || "대상 금액")}</div><div class="val">${fmtWonFull(o.target_amount)}</div></div>
-          <div><div class="lbl">${escapeHtml(o.expected_credit_label || "예상 공제액")}</div><div class="val val-green">${fmtWonFull(o.expected_credit)}</div></div>
-        </div>`;
-      }
-
-      // 핵심 경고(순효과가 마이너스라 권장하지 않는 경우)는 항상 보이게, 나머지 설명은 토글 하나로 통일
-      if (o.marginal_analysis) {
-        html += `<div class="verdict">${escapeHtml(o.marginal_analysis.verdict)}</div>`;
-      }
-
-      html += `<details class="why-details"><summary>자세히 보기</summary>`;
-      html += `<p>${escapeHtml(o.why)}</p>`;
-
-      if (o.marginal_analysis) {
-        const m = o.marginal_analysis;
-        html += `<div class="econ-box">
-          <div class="t">경제성 판단</div>
-          <div class="econ-grid">
-            <div>추가 필요 지출<b>${fmtWonFull(m.extra_spend)}</b></div>
-            <div>예상 추가 혜택<b>${fmtWonFull(m.extra_credit)}</b></div>
-            <div>순효과<b class="neg">${fmtWonFull(m.net_effect)}</b></div>
-          </div>
-        </div>`;
-      }
-
-      if (o.rule_meta) {
-        const r = o.rule_meta;
-        html += `<div class="rule-foot">
-          📜 근거 ${escapeHtml(r.source_url)}<br/>
-          기준일 ${escapeHtml(r.updated_at)} · 산식 ${escapeHtml(r.formula)} · 한도 ${escapeHtml(r.limit)}<br/>
-          필요 증빙 ${escapeHtml(r.required_evidence)}
-        </div>`;
-      }
-      html += `</details>`;
-      html += `</div>`;
-      list.insertAdjacentHTML("beforeend", html);
-    });
-  }
-
-  function renderV2Simulator(data) {
-    const latest = data.monthly[data.monthly.length - 1];
-    const baseProfit = latest.profit;
-    const slider = $("laborSlider");
-    function update() {
-      const pct = parseFloat(slider.value);
-      $("simLabel").textContent = `인건비 -${pct}% 조정 시`;
-      const saved = latest.labor_cost * (pct / 100);
-      const after = baseProfit + saved;
-      $("simBase").textContent = fmtWonFull(baseProfit);
-      $("simAfter").textContent = fmtWonFull(after);
-      $("simAiReco").textContent = pct <= 0
-        ? "슬라이더를 움직여 인건비 조정 효과를 확인해보세요."
-        : `인건비를 ${pct}% 줄일 경우, 월 약 ${Math.round(saved / 10000)}만원의 추가 이익이 예상됩니다. 인력 운영 효율화를 검토해보세요.`;
-    }
-    slider.oninput = update;
-    $("simMinus").onclick = () => { slider.value = Math.max(0, parseFloat(slider.value) - 1); update(); };
-    $("simPlus").onclick = () => { slider.value = Math.min(20, parseFloat(slider.value) + 1); update(); };
-    update();
   }
 
   let excelValidPayloads = [];
@@ -5182,13 +4000,6 @@
 
       excelPreviewBox?.classList.add("hidden");
       btnExcelCommit.disabled = true;
-
-      try {
-        lastRecords = await fetchRecords();
-        renderHistoryTrend(lastRecords);
-      } catch (recordsErr) {
-        console.warn("[TS] records reload after import failed:", recordsErr);
-      }
     } catch (err) {
       console.error("[TS] excel commit error:", err);
       showExcelImportError("저장 중 오류가 발생했습니다.");
@@ -5236,6 +4047,7 @@
   setMonthValue(inpMonth.value || "", { save: false });
   updateWizardSummary();
   ensureDynamicUi();
+  renderDashboardHome();
   renderCostMismatchWarning();
 
   const lastRunId = sessionStorage.getItem("ts_last_run_id");
@@ -5244,22 +4056,9 @@
   if (lastResponseRaw) {
     try {
       const restored = JSON.parse(lastResponseRaw);
-
-      fetchRecords()
-        .then((items) => {
-          lastRecords = items;
-          renderHistoryTrend(lastRecords);
-          renderSummaryFromResponse(restored);
-          setTab("result");
-          console.log("[TS] restored cached response:", lastRunId || "no-run-id");
-        })
-        .catch((e) => {
-          console.warn("[TS] restore records fetch failed:", e);
-          lastRecords = [];
-          renderSummaryFromResponse(restored);
-          setTab("result");
-          console.log("[TS] restored cached response without records:", lastRunId || "no-run-id");
-        });
+      renderSummaryFromResponse(restored);
+      setTab("result");
+      console.log("[TS] restored cached response:", lastRunId || "no-run-id");
     } catch (e) {
       console.error("[TS] restore failed:", e);
 
@@ -5272,38 +4071,6 @@
       sumInsight.textContent = "계산을 실행하면 표시됩니다.";
       setTags(["ready"]);
       prePayload.textContent = "{}";
-
-      reportExecutive.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-      reportTaxBrief.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-      reportRisk.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-      reportActions.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-      kpiCardsWrap.innerHTML = `
-        <div class="report-card" style="grid-column:1/-1;">
-          <div class="empty-note">계산 후 표시됩니다.</div>
-        </div>
-      `;
-      benchmarkMeta.textContent = "계산 후 표시됩니다.";
-      benchmarkTableBody.innerHTML = `
-        <tr>
-          <td colspan="7" class="empty-note" style="padding:14px;">계산 후 표시됩니다.</td>
-        </tr>
-      `;
-      if (metaAssumptions) metaAssumptions.innerHTML = ``;
-      metaFailures.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-      const diag = $("diagnosisSummaryBox");
-      if (diag) diag.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-      const fs = $("financialStructureBox");
-      if (fs) fs.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-      const hs = $("historyCompareBox");
-      if (hs) hs.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-      const bs = $("benchmarkSummaryBox");
-      if (bs) bs.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-      const ts = $("taxSignalBox");
-      if (ts) ts.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-      const rs = $("riskSummaryBox");
-      if (rs) rs.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-      const as = $("actionSummaryBox");
-      if (as) as.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
     }
   } else {
     setTab("input");
@@ -5315,37 +4082,5 @@
     sumInsight.textContent = "계산을 실행하면 표시됩니다.";
     setTags(["ready"]);
     prePayload.textContent = "{}";
-
-    reportExecutive.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-    reportTaxBrief.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-    reportRisk.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-    reportActions.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-    kpiCardsWrap.innerHTML = `
-      <div class="report-card" style="grid-column:1/-1;">
-        <div class="empty-note">계산 후 표시됩니다.</div>
-      </div>
-    `;
-    benchmarkMeta.textContent = "계산 후 표시됩니다.";
-    benchmarkTableBody.innerHTML = `
-      <tr>
-        <td colspan="7" class="empty-note" style="padding:14px;">계산 후 표시됩니다.</td>
-      </tr>
-    `;
-    if (metaAssumptions) metaAssumptions.innerHTML = ``;
-    metaFailures.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-    const diag = $("diagnosisSummaryBox");
-    if (diag) diag.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-    const fs = $("financialStructureBox");
-    if (fs) fs.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-    const hs = $("historyCompareBox");
-    if (hs) hs.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-    const bs = $("benchmarkSummaryBox");
-    if (bs) bs.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-    const ts = $("taxSignalBox");
-    if (ts) ts.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-    const rs = $("riskSummaryBox");
-    if (rs) rs.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
-    const as = $("actionSummaryBox");
-    if (as) as.innerHTML = `<div class="empty-note">계산 후 표시됩니다.</div>`;
   }
 })();
