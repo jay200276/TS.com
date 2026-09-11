@@ -2,8 +2,16 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>TS (tax secretary) — 회원 계산</title>
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#0D3EDB" />
+  <link rel="icon" href="./icon-192.png" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="TS" />
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -88,9 +96,9 @@
       object-fit:cover;
       display:block;
     }
-    .brand-text{display:flex; flex-direction:column; line-height:1.1}
-    .brand-text .t1{font-weight:800; font-size:14px}
-    .brand-text .t2{font-size:12px; color:var(--muted); margin-top:3px}
+    .brand-text{display:flex; flex-direction:column; line-height:1.1; min-width:0;}
+    .brand-text .t1{font-weight:800; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .brand-text .t2{font-size:12px; color:var(--muted); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 
     .logout{
       border:1px solid var(--line);
@@ -99,8 +107,19 @@
       border-radius: 999px;
       cursor:pointer;
       box-shadow: 0 8px 18px rgba(15,23,42,.06);
+      white-space:nowrap; flex:0 0 auto;
     }
     .logout:hover{background:#fff}
+    .topbar-actions{display:flex; align-items:center; gap:8px; flex:0 0 auto;}
+    .topbar-actions #guestModeBadge{white-space:nowrap; flex:0 0 auto;}
+
+    @media (max-width:480px){
+      .topbar-inner{padding:12px 14px; gap:8px;}
+      .brand{gap:8px;}
+      .brand-text .t2{display:none;}
+      .logout{padding:8px 10px; font-size:12.5px;}
+      .topbar-actions #guestModeBadge{font-size:10.5px !important; padding:4px 8px !important;}
+    }
 
     .wrap{
       max-width:1160px;
@@ -1100,7 +1119,7 @@
         </div>
       </div>
 
-      <div style="display:flex; align-items:center; gap:8px;">
+      <div class="topbar-actions">
         <span id="guestModeBadge" class="hidden" style="font-size:11.5px; font-weight:800; padding:5px 10px; border-radius:999px; background:rgba(255,171,0,.14); color:#b45309; border:1px solid rgba(255,171,0,.35);">게스트 모드</span>
         <button id="btnLogout" class="logout" type="button">로그아웃</button>
       </div>
