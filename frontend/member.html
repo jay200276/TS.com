@@ -599,6 +599,27 @@
     .ts-home-hist-table td{ padding:9px 10px; border-bottom:1px solid rgba(15,23,42,.06); font-weight:700; }
     .ts-home-hist-status{ display:inline-block; font-size:11px; font-weight:900; padding:2px 9px; border-radius:999px; background: var(--good-bg); color: var(--good-text); }
 
+    /* 좁은 화면에서는 표 대신 행 1개 = 카드 1개로 보여준다 */
+    @media (max-width:640px){
+      .ts-home-hist-table thead{ display:none; }
+      .ts-home-hist-table, .ts-home-hist-table tbody{ display:block; width:100%; }
+      .ts-home-hist-table tr{
+        display:block; background:#fff; border:1px solid var(--line); border-radius:12px;
+        padding:4px 12px; margin-bottom:8px;
+      }
+      .ts-home-hist-table tr:has(td[colspan]){ border:none; background:transparent; padding:0; }
+      .ts-home-hist-table td{
+        display:flex; justify-content:space-between; align-items:center; gap:10px;
+        padding:8px 0; border-bottom:1px dashed rgba(15,23,42,.08); white-space:normal; text-align:right;
+      }
+      .ts-home-hist-table td[colspan]{ display:block; text-align:left; border-bottom:none; }
+      .ts-home-hist-table td:last-child{ border-bottom:none; }
+      .ts-home-hist-table td::before{
+        content:attr(data-label); font-size:10.5px; font-weight:800; color:var(--muted);
+        flex:0 0 auto; text-align:left;
+      }
+    }
+
     /* ---------- 기회·시뮬레이션 티저 / 데이터 완성도 ---------- */
     .ts-card-link{
       font-size:12.5px; font-weight:800; color: var(--primary2); cursor:pointer;
@@ -705,6 +726,44 @@
     .ts-ledger-status-chip{ font-size:10.5px; font-weight:900; padding:3px 9px; border-radius:999px; }
     .ts-ledger-status-chip.done{ background: var(--good-bg); color: var(--good-text); }
     .ts-ledger-status-chip.review{ background: var(--warn2-bg); color: var(--warn2-text); }
+
+    /* 좁은 화면에서는 가로 스크롤 표 대신 거래 1건 = 카드 1개로 보여준다 */
+    @media (max-width:640px){
+      .ts-ledger-table-wrap{ overflow-x:visible; background:transparent; border:none; box-shadow:none; border-radius:0; }
+      .ts-ledger-table{ display:block; width:100%; }
+      .ts-ledger-table thead{ display:none; }
+      .ts-ledger-table tbody{ display:block; }
+      .ts-ledger-table tbody tr{
+        display:grid; grid-template-columns:1fr auto; column-gap:10px; row-gap:6px;
+        background: rgba(255,255,255,.9); border:1px solid var(--line); border-radius:14px;
+        padding:12px 14px; margin-bottom:10px; box-shadow: var(--shadow2);
+      }
+      .ts-ledger-table td{ padding:0; border-bottom:none; white-space:normal; display:block; }
+      .ts-ledger-table td::before{
+        content: attr(data-label); display:block; font-size:10.5px; font-weight:800;
+        color: var(--muted); margin-bottom:2px;
+      }
+      .ts-ledger-table td[data-label="날짜"]{ grid-column:1; grid-row:1; order:1; }
+      .ts-ledger-table td[data-label="거래처"]{ grid-column:1; grid-row:2; order:2; }
+      .ts-ledger-table td[data-label="내용"]{ grid-column:1; grid-row:3; order:3; }
+      .ts-ledger-table td[data-label="금액"]{ grid-column:2; grid-row:1 / span 2; order:4; text-align:right; }
+      .ts-ledger-table td[data-label="금액"]::before{ text-align:right; }
+      .ts-ledger-table td[data-label="구분"]{ grid-column:2; grid-row:3; order:5; text-align:right; }
+      .ts-ledger-table td[data-label="구분"]::before{ display:none; }
+      .ts-ledger-table td[data-label="카테고리"],
+      .ts-ledger-table td[data-label="증빙"],
+      .ts-ledger-table td[data-label="상태"]{
+        grid-column:1 / -1; display:flex; align-items:center; justify-content:space-between;
+        padding-top:8px; margin-top:2px; border-top:1px dashed rgba(15,23,42,.08);
+      }
+      .ts-ledger-table td[data-label="카테고리"]::before,
+      .ts-ledger-table td[data-label="증빙"]::before,
+      .ts-ledger-table td[data-label="상태"]::before{ margin-bottom:0; }
+      .ts-ledger-table td[data-label="카테고리"]{ order:6; }
+      .ts-ledger-table td[data-label="증빙"]{ order:7; }
+      .ts-ledger-table td[data-label="상태"]{ order:8; }
+      .ts-ledger-amt{ font-size:14px; }
+    }
 
     .ts-ledger-side{ display:flex; flex-direction:column; gap:12px; }
     .ts-ledger-side-card{
@@ -1624,6 +1683,6 @@
     }, true);
   </script>
 
-  <script src="./member.js?v=20260910z"></script>
+  <script src="./member.js?v=202609110b"></script>
 </body>
 </html>

@@ -2577,14 +2577,14 @@
     if (body) {
       body.innerHTML = filtered.map((r) => `
         <tr data-ledger-row="${escapeHtml(r.id)}" class="${r.id === ledgerSelectedId ? "selected" : ""}">
-          <td>${escapeHtml(r.date.slice(5).replace("-", "/"))}</td>
-          <td>${escapeHtml(r.vendor)}</td>
-          <td>${escapeHtml(r.desc)}</td>
-          <td class="ts-ledger-amt ${r.type}">${r.amount > 0 ? "+" : "-"}${fmtWonFull(Math.abs(r.amount))}</td>
-          <td><span class="ts-ledger-type-chip ${r.type}">${r.type === "income" ? "수입" : "지출"}</span></td>
-          <td>${escapeHtml(r.category)}</td>
-          <td class="ts-ledger-evidence ${r.evidence ? "" : "none"}" data-ledger-evidence-cell="${escapeHtml(r.id)}" title="클릭해서 증빙 사진/PDF 업로드">${r.evidence ? escapeHtml(r.evidence) : "없음"}</td>
-          <td><span class="ts-ledger-status-chip ${r.status}">${r.status === "done" ? "완료" : "확인 필요"}</span></td>
+          <td data-label="날짜">${escapeHtml(r.date.slice(5).replace("-", "/"))}</td>
+          <td data-label="거래처" class="ts-ledger-vendor-cell">${escapeHtml(r.vendor)}</td>
+          <td data-label="내용">${escapeHtml(r.desc)}</td>
+          <td class="ts-ledger-amt ${r.type}" data-label="금액">${r.amount > 0 ? "+" : "-"}${fmtWonFull(Math.abs(r.amount))}</td>
+          <td data-label="구분"><span class="ts-ledger-type-chip ${r.type}">${r.type === "income" ? "수입" : "지출"}</span></td>
+          <td data-label="카테고리">${escapeHtml(r.category)}</td>
+          <td class="ts-ledger-evidence ${r.evidence ? "" : "none"}" data-label="증빙" data-ledger-evidence-cell="${escapeHtml(r.id)}" title="클릭해서 증빙 사진/PDF 업로드">${r.evidence ? escapeHtml(r.evidence) : "없음"}</td>
+          <td data-label="상태"><span class="ts-ledger-status-chip ${r.status}">${r.status === "done" ? "완료" : "확인 필요"}</span></td>
         </tr>
       `).join("");
       emptyNote?.classList.toggle("hidden", filtered.length > 0);
@@ -3375,9 +3375,9 @@
     const histBody = $("taxHistoryBody");
     if (histBody) {
       histBody.innerHTML = `
-        <tr><td>부가가치세 예정신고 (1기)</td><td>2026.01 ~ 03</td><td><span class="ts-home-hist-status">완료</span></td></tr>
-        <tr><td>부가가치세 확정신고 (1기)</td><td>2026.04 ~ 06</td><td><span class="ts-home-hist-status">완료</span></td></tr>
-        <tr><td>종합소득세 확정신고</td><td>2025년 귀속</td><td><span class="ts-home-hist-status">완료</span></td></tr>
+        <tr><td data-label="신고 유형">부가가치세 예정신고 (1기)</td><td data-label="기간">2026.01 ~ 03</td><td data-label="상태"><span class="ts-home-hist-status">완료</span></td></tr>
+        <tr><td data-label="신고 유형">부가가치세 확정신고 (1기)</td><td data-label="기간">2026.04 ~ 06</td><td data-label="상태"><span class="ts-home-hist-status">완료</span></td></tr>
+        <tr><td data-label="신고 유형">종합소득세 확정신고</td><td data-label="기간">2025년 귀속</td><td data-label="상태"><span class="ts-home-hist-status">완료</span></td></tr>
       `;
     }
   }
@@ -3670,7 +3670,7 @@
             const itemLabel = s.items.length <= 2
               ? s.items.map((it) => it.title).join(", ")
               : `${s.items[0].title} 외 ${s.items.length - 1}건`;
-            return `<tr><td>${escapeHtml(s.month)}</td><td>${escapeHtml(itemLabel)}</td><td>${fmtWonFull(s.total)}</td></tr>`;
+            return `<tr><td data-label="기간">${escapeHtml(s.month)}</td><td data-label="절세 항목">${escapeHtml(itemLabel)}</td><td data-label="절감액">${fmtWonFull(s.total)}</td></tr>`;
           }).join("");
     }
     const histSum = $("saveHistorySummary");
@@ -3801,10 +3801,10 @@
             <tbody>
               ${rows.map((it) => `
                 <tr>
-                  <td>${escapeHtml(metricLabel(it.metric))}</td>
-                  <td>${ratioToPercent(it.my_value)}</td>
-                  <td>${ratioToPercent(it.p50)}</td>
-                  <td>${escapeHtml(levelKoText(it.level, it.metric))}</td>
+                  <td data-label="지표">${escapeHtml(metricLabel(it.metric))}</td>
+                  <td data-label="우리 매장">${ratioToPercent(it.my_value)}</td>
+                  <td data-label="업종 중앙값">${ratioToPercent(it.p50)}</td>
+                  <td data-label="평가">${escapeHtml(levelKoText(it.level, it.metric))}</td>
                 </tr>
               `).join("")}
             </tbody>
