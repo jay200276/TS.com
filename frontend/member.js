@@ -1098,7 +1098,6 @@
             <div class="ts-ledger-quick-row">
               <button class="ts-ledger-quick-btn primary" type="button" id="ledgerBtnAdd">+ 거래 직접 등록</button>
               <button class="ts-ledger-quick-btn" type="button" id="ledgerBtnExcel">엑셀 업로드</button>
-              <button class="ts-ledger-quick-btn" type="button" id="ledgerBtnReceipt">영수증 추가</button>
               <button class="ts-ledger-quick-btn" type="button" id="ledgerBtnUnclassified">미분류 거래 확인</button>
             </div>
 
@@ -1339,6 +1338,48 @@
       $("taxBtnPdf")?.addEventListener("click", () => exportTaxFilingPdf());
       $("saveEvidenceReminderBtn")?.addEventListener("click", () => toggleEvidenceReminder());
       $("reportBtnCsv")?.addEventListener("click", () => exportReportCsv());
+
+      $("ledgerExcelFileInput")?.addEventListener("change", () => {
+        const input = $("ledgerExcelFileInput");
+        const file = input?.files?.[0];
+        const nameHint = file ? file.name : null;
+        if (!file) { closeLedgerExcelModal(); return; }
+        const status = $("ledgerExcelStatus");
+        if (status && nameHint) status.textContent = `선택된 파일: ${nameHint}`;
+        runLedgerExcelPreview(file);
+      });
+      $("ledgerExcelModalClose")?.addEventListener("click", () => closeLedgerExcelModal());
+      $("ledgerExcelModal")?.addEventListener("click", (e) => {
+        if (e.target instanceof HTMLElement && e.target.dataset.closeLedgerExcel === "true") closeLedgerExcelModal();
+      });
+      $("ledgerExcelReselectBtn")?.addEventListener("click", () => {
+        resetLedgerExcelModal();
+        $("ledgerExcelFileInput")?.click();
+      });
+      $("ledgerExcelCommitBtn")?.addEventListener("click", () => commitLedgerExcel());
+
+      $("ledgerEvidenceFileInput")?.addEventListener("change", async () => {
+        const input = $("ledgerEvidenceFileInput");
+        const file = input?.files?.[0];
+        const targetId = ledgerEvidenceTargetId;
+        if (!file || !targetId) return;
+        try {
+          const ev = await processEvidenceFile(file);
+          const map = getLedgerEvidenceMap();
+          map[targetId] = ev;
+          try {
+            setLedgerEvidenceMap(map);
+          } catch (storageErr) {
+            throw new Error("저장 공간이 부족해요. 더 작은 파일로 다시 시도해주세요.");
+          }
+          ledgerToast("증빙이 저장됐어요.");
+          renderDashLedger();
+        } catch (err) {
+          ledgerToast(err?.message || "증빙 업로드에 실패했습니다.");
+        } finally {
+          ledgerEvidenceTargetId = null;
+        }
+      });
       $("reportTrendTabs")?.querySelectorAll("[data-metric]").forEach((btn) => {
         btn.addEventListener("click", () => {
           $("reportTrendTabs").querySelectorAll("[data-metric]").forEach((b) => b.classList.toggle("active", b === btn));
@@ -2432,7 +2473,10 @@
   const LEDGER_CUSTOM_KEY = "ts_ledger_custom_v1";
   const LEDGER_RECURRING_KEY = "ts_ledger_recurring_v1";
   const LEDGER_LEARNED_KEY = "ts_ledger_learned_v1";
+  const LEDGER_EVIDENCE_KEY = "ts_ledger_evidence_v1";
   const LEDGER_CATEGORIES = ["재료비", "인건비", "임차료", "공과금", "광고비", "배달매출", "카드매출", "면세농산물", "현금매출", "기타"];
+  let ledgerExcelValidPayloads = [];
+  let ledgerEvidenceTargetId = null;
 
   let ledgerFilter = { type: "all", category: "all", evidence: "all", status: "all", q: "" };
   let ledgerSelectedId = null;
@@ -2453,17 +2497,30 @@
   }
   function setLedgerCustom(arr) { localStorage.setItem(LEDGER_CUSTOM_KEY, JSON.stringify(arr)); }
 
+  function getLedgerEvidenceMap() {
+    try { return JSON.parse(localStorage.getItem(LEDGER_EVIDENCE_KEY) || "{}"); } catch { return {}; }
+  }
+  function setLedgerEvidenceMap(obj) { localStorage.setItem(LEDGER_EVIDENCE_KEY, JSON.stringify(obj)); }
+
   function ledgerAllRows() {
     const learned = getLedgerLearned();
+    const evidenceMap = getLedgerEvidenceMap();
     return [...getLedgerCustom(), ...LEDGER_SAMPLE].map((r) => {
+      let row = r;
       const rule = learned[r.vendor];
-      if (!rule || r.status !== "review") return r;
-      return {
-        ...r,
-        category: rule.category,
-        status: "done",
-        aiNote: `이전에 "${escapeHtml(r.vendor)}" 거래를 ${rule.category}(으)로 직접 분류하신 내역을 학습해 자동 적용했습니다.`,
-      };
+      if (rule && r.status === "review") {
+        row = {
+          ...row,
+          category: rule.category,
+          status: "done",
+          aiNote: `이전에 "${escapeHtml(r.vendor)}" 거래를 ${rule.category}(으)로 직접 분류하신 내역을 학습해 자동 적용했습니다.`,
+        };
+      }
+      const ev = evidenceMap[row.id];
+      if (ev) {
+        row = { ...row, evidence: ev.name, evidenceFile: ev };
+      }
+      return row;
     });
   }
 
@@ -2526,7 +2583,7 @@
           <td class="ts-ledger-amt ${r.type}">${r.amount > 0 ? "+" : "-"}${fmtWonFull(Math.abs(r.amount))}</td>
           <td><span class="ts-ledger-type-chip ${r.type}">${r.type === "income" ? "수입" : "지출"}</span></td>
           <td>${escapeHtml(r.category)}</td>
-          <td class="ts-ledger-evidence ${r.evidence ? "" : "none"}">${r.evidence ? escapeHtml(r.evidence) : "없음"}</td>
+          <td class="ts-ledger-evidence ${r.evidence ? "" : "none"}" data-ledger-evidence-cell="${escapeHtml(r.id)}" title="클릭해서 증빙 사진/PDF 업로드">${r.evidence ? escapeHtml(r.evidence) : "없음"}</td>
           <td><span class="ts-ledger-status-chip ${r.status}">${r.status === "done" ? "완료" : "확인 필요"}</span></td>
         </tr>
       `).join("");
@@ -2564,14 +2621,21 @@
             ` : `<div class="v">${selected.type === "income" ? "수입" : "지출"} &gt; ${escapeHtml(selected.category)}</div>`}
           </div>
           <div class="ts-ledger-detail-row"><div class="k">결제수단</div><div class="v">${escapeHtml(selected.method)}</div></div>
-          <div class="ts-ledger-detail-row"><div class="k">증빙</div><div class="v">${selected.evidence ? escapeHtml(selected.evidence) : "없음"}</div></div>
+          <div class="ts-ledger-detail-row">
+            <div class="k">증빙</div>
+            <div class="v">
+              ${selected.evidenceFile
+                ? `<a href="${selected.evidenceFile.dataUrl}" target="_blank" rel="noopener" class="ts-ledger-evidence-link">${escapeHtml(selected.evidenceFile.name)}</a> · <button type="button" id="ledgerBtnRemoveEvidence" class="ts-card-link">삭제</button>`
+                : (selected.evidence ? escapeHtml(selected.evidence) : "없음")}
+            </div>
+          </div>
           <div class="ts-ledger-detail-row"><div class="k">세금 처리</div><div class="v">${escapeHtml(selected.taxNote)}</div></div>
 
           <div class="ts-ledger-detail-ai">🤖 AI 판단: ${escapeHtml(selected.aiNote)}</div>
 
           <div class="ts-ledger-detail-actions">
             <button class="ts-ledger-detail-btn" type="button" id="ledgerBtnReclassify">분류 수정</button>
-            <button class="ts-ledger-detail-btn" type="button" id="ledgerBtnAddEvidence">증빙 추가</button>
+            <button class="ts-ledger-detail-btn" type="button" id="ledgerBtnAddEvidence">${selected.evidenceFile ? "증빙 다시 올리기" : "증빙 추가"}</button>
             <button class="ts-ledger-detail-btn" type="button" id="ledgerBtnSaveRecurring">🔁 반복거래로 저장</button>
           </div>
         </div>
@@ -2716,11 +2780,7 @@
       if (sel) sel.value = "review";
       renderDashLedger();
     });
-    $("ledgerBtnExcel")?.addEventListener("click", () => {
-      setTab("input");
-      $("excelImportCard")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-    $("ledgerBtnReceipt")?.addEventListener("click", () => ledgerToast("데모 화면에서는 영수증 업로드가 지원되지 않아요."));
+    $("ledgerBtnExcel")?.addEventListener("click", () => openLedgerExcelModal());
     $("ledgerBtnAdd")?.addEventListener("click", openLedgerAddRow);
 
     bindLedgerRowClicks();
@@ -2736,6 +2796,17 @@
         renderDashLedger();
       });
     });
+    $("ledgerTableBody")?.querySelectorAll("[data-ledger-evidence-cell]").forEach((cell) => {
+      cell.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const id = cell.getAttribute("data-ledger-evidence-cell");
+        if (!id) return;
+        ledgerSelectedId = id;
+        ledgerReclassifyOpen = false;
+        renderDashLedger();
+        openLedgerEvidenceUpload(id);
+      });
+    });
   }
 
   function bindLedgerSideActions() {
@@ -2744,7 +2815,17 @@
       ledgerReclassifyOpen = true;
       renderDashLedger();
     });
-    $("ledgerBtnAddEvidence")?.addEventListener("click", () => ledgerToast("증빙 추가 기능은 준비 중이에요."));
+    $("ledgerBtnAddEvidence")?.addEventListener("click", () => {
+      if (ledgerSelectedId) openLedgerEvidenceUpload(ledgerSelectedId);
+    });
+    $("ledgerBtnRemoveEvidence")?.addEventListener("click", () => {
+      if (!ledgerSelectedId) return;
+      const map = getLedgerEvidenceMap();
+      delete map[ledgerSelectedId];
+      setLedgerEvidenceMap(map);
+      ledgerToast("증빙을 삭제했어요.");
+      renderDashLedger();
+    });
     $("ledgerLinkMissing")?.addEventListener("click", () => {
       ledgerFilter.evidence = "none";
       const sel = $("ledgerEvidenceFilter");
@@ -2815,6 +2896,269 @@
       ledgerToast("거래가 등록됐어요.");
       renderDashLedger();
     });
+  }
+
+  // ---------------------------------------------------------------------
+  // 장부 관리 - 증빙 사진/PDF 업로드
+  // ---------------------------------------------------------------------
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error("파일을 읽을 수 없습니다."));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function downscaleImageFile(file, maxDim, quality) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > maxDim || height > maxDim) {
+            const scale = maxDim / Math.max(width, height);
+            width = Math.round(width * scale);
+            height = Math.round(height * scale);
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.onerror = () => reject(new Error("이미지를 불러올 수 없습니다."));
+        img.src = reader.result;
+      };
+      reader.onerror = () => reject(new Error("파일을 읽을 수 없습니다."));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function processEvidenceFile(file) {
+    const MAX_BYTES = 8 * 1024 * 1024;
+    if (file.size > MAX_BYTES) {
+      throw new Error("파일 용량이 너무 커요. 8MB 이하 파일로 올려주세요.");
+    }
+    const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+    if (isPdf) {
+      const dataUrl = await readFileAsDataUrl(file);
+      return { name: file.name, kind: "pdf", dataUrl, uploadedAt: new Date().toISOString() };
+    }
+    if (file.type.startsWith("image/")) {
+      const dataUrl = await downscaleImageFile(file, 1400, 0.82);
+      return { name: file.name, kind: "image", dataUrl, uploadedAt: new Date().toISOString() };
+    }
+    throw new Error("사진(이미지) 또는 PDF 파일만 업로드할 수 있어요.");
+  }
+
+  function openLedgerEvidenceUpload(rowId) {
+    ledgerEvidenceTargetId = rowId;
+    const input = $("ledgerEvidenceFileInput");
+    if (input) {
+      input.value = "";
+      input.click();
+    }
+  }
+
+  // ---------------------------------------------------------------------
+  // 장부 관리 - 엑셀로 여러 달 등록 (모달, 화면 이동 없이 바로 업로드)
+  // ---------------------------------------------------------------------
+  function showLedgerExcelError(msg) {
+    const el = $("ledgerExcelImportError");
+    if (!el) return;
+    el.textContent = String(msg || "");
+    el.classList.toggle("hidden", !msg);
+  }
+
+  function resetLedgerExcelModal() {
+    ledgerExcelValidPayloads = [];
+    showLedgerExcelError("");
+    $("ledgerExcelPreviewBox")?.classList.add("hidden");
+    const resultBox = $("ledgerExcelCommitResultBox");
+    resultBox?.classList.add("hidden");
+    if (resultBox) resultBox.innerHTML = "";
+    const list = $("ledgerExcelPreviewList");
+    if (list) list.innerHTML = "";
+    const summary = $("ledgerExcelPreviewSummary");
+    if (summary) summary.textContent = "";
+    const commitBtn = $("ledgerExcelCommitBtn");
+    if (commitBtn) { commitBtn.disabled = true; commitBtn.textContent = "확인한 내용대로 저장"; }
+    const status = $("ledgerExcelStatus");
+    if (status) { status.textContent = "엑셀 파일(.xlsx, .xls)을 선택해주세요."; status.classList.remove("hidden"); }
+  }
+
+  function openLedgerExcelModal() {
+    const modal = $("ledgerExcelModal");
+    if (!modal) return;
+    resetLedgerExcelModal();
+    modal.classList.remove("hidden");
+    modal.setAttribute("aria-hidden", "false");
+    const input = $("ledgerExcelFileInput");
+    if (input) {
+      input.value = "";
+      input.click();
+    }
+  }
+
+  function closeLedgerExcelModal() {
+    $("ledgerExcelModal")?.classList.add("hidden");
+    $("ledgerExcelModal")?.setAttribute("aria-hidden", "true");
+  }
+
+  function renderLedgerExcelPreview(data) {
+    const rows = Array.isArray(data?.rows) ? data.rows : [];
+    ledgerExcelValidPayloads = rows.filter((r) => r.ok && r.payload).map((r) => r.payload);
+
+    const summary = $("ledgerExcelPreviewSummary");
+    if (summary) {
+      summary.textContent =
+        `총 ${rows.length}행 중 저장 가능 ${data?.valid_count ?? ledgerExcelValidPayloads.length}행, ` +
+        `오류 ${data?.error_count ?? 0}행입니다. 아래 내용을 확인한 뒤 저장을 눌러주세요.`;
+    }
+
+    const list = $("ledgerExcelPreviewList");
+    if (list) {
+      list.innerHTML = rows.map((r) => {
+        if (!r.ok) {
+          return `
+            <div class="excel-preview-row is-error">
+              <span class="epr-month">${escapeHtml(String(r.row_index))}행</span>
+              <span class="epr-detail">${escapeHtml(r.error || "오류")}</span>
+            </div>`;
+        }
+        const p = r.payload || {};
+        const detail =
+          `매출 ${formatWon(p.revenue_vat_included)}원 · 비용 ${formatWon(p.cost_vat_included)}원` +
+          (p.labor_cost ? ` · 인건비 ${formatWon(p.labor_cost)}원` : "");
+        const tag = r.will_overwrite
+          ? `<span class="epr-tag">기존 기록 덮어쓰기</span>`
+          : `<span class="epr-tag">새로 저장</span>`;
+        return `
+          <div class="excel-preview-row${r.will_overwrite ? " is-overwrite" : ""}">
+            <span class="epr-month">${escapeHtml(p.month || "-")}</span>
+            <span class="epr-detail">${escapeHtml(detail)}</span>
+            ${tag}
+          </div>`;
+      }).join("");
+    }
+
+    $("ledgerExcelPreviewBox")?.classList.remove("hidden");
+    $("ledgerExcelCommitResultBox")?.classList.add("hidden");
+    $("ledgerExcelStatus")?.classList.add("hidden");
+    const commitBtn = $("ledgerExcelCommitBtn");
+    if (commitBtn) commitBtn.disabled = ledgerExcelValidPayloads.length === 0;
+  }
+
+  async function runLedgerExcelPreview(file) {
+    showLedgerExcelError("");
+    const status = $("ledgerExcelStatus");
+    if (status) { status.textContent = "미리보기 불러오는 중…"; status.classList.remove("hidden"); }
+
+    const token = getToken();
+    if (!token) {
+      status?.classList.add("hidden");
+      showLedgerExcelError("로그인이 필요합니다.");
+      return;
+    }
+
+    try {
+      const base = getApiBase();
+      const fd = new FormData();
+      fd.append("file", file);
+
+      const res = await fetch(`${base}/api/v1/calc/import/preview`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` },
+        body: fd,
+        cache: "no-store",
+      });
+
+      const text = await res.text();
+      let data = null;
+      try { data = JSON.parse(text); } catch (_) { data = null; }
+
+      if (!res.ok) {
+        status?.classList.add("hidden");
+        showLedgerExcelError(data?.detail || `엑셀 미리보기 실패 (${res.status})`);
+        return;
+      }
+      if (!data) {
+        status?.classList.add("hidden");
+        showLedgerExcelError("서버 응답을 해석할 수 없습니다.");
+        return;
+      }
+
+      renderLedgerExcelPreview(data);
+    } catch (err) {
+      console.error("[TS] ledger excel preview error:", err);
+      status?.classList.add("hidden");
+      showLedgerExcelError("엑셀 미리보기 중 오류가 발생했습니다.");
+    }
+  }
+
+  async function commitLedgerExcel() {
+    showLedgerExcelError("");
+    if (ledgerExcelValidPayloads.length === 0) {
+      showLedgerExcelError("저장할 수 있는 행이 없습니다.");
+      return;
+    }
+    const token = getToken();
+    if (!token) {
+      showLedgerExcelError("로그인이 필요합니다.");
+      return;
+    }
+
+    const commitBtn = $("ledgerExcelCommitBtn");
+    if (commitBtn) { commitBtn.disabled = true; commitBtn.textContent = "저장 중…"; }
+
+    try {
+      const base = getApiBase();
+      const res = await fetch(`${base}/api/v1/calc/import/commit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ rows: ledgerExcelValidPayloads }),
+        cache: "no-store",
+      });
+
+      const text = await res.text();
+      let data = null;
+      try { data = JSON.parse(text); } catch (_) { data = null; }
+
+      if (!res.ok) {
+        showLedgerExcelError(data?.detail || `저장 실패 (${res.status})`);
+        return;
+      }
+      if (!data) {
+        showLedgerExcelError("서버 응답을 해석할 수 없습니다.");
+        return;
+      }
+
+      const results = Array.isArray(data.results) ? data.results : [];
+      const resultBox = $("ledgerExcelCommitResultBox");
+      if (resultBox) {
+        resultBox.innerHTML =
+          `<div class="empty-note">${data.saved_count ?? 0}건 저장 완료, ${data.failed_count ?? 0}건 실패</div>` +
+          results.map((r) => `
+            <div class="excel-commit-row ${r.ok ? "ok" : "fail"}">
+              <span>${escapeHtml(r.month)}${r.overwritten ? " (덮어씀)" : ""}</span>
+              <span>${r.ok ? "저장됨" : escapeHtml(r.error || "실패")}</span>
+            </div>
+          `).join("");
+        resultBox.classList.remove("hidden");
+      }
+
+      $("ledgerExcelPreviewBox")?.classList.add("hidden");
+      ledgerToast(`엑셀 업로드 완료: ${data.saved_count ?? 0}건 저장됐어요.`);
+      if (commitBtn) commitBtn.disabled = true;
+    } catch (err) {
+      console.error("[TS] ledger excel commit error:", err);
+      showLedgerExcelError("저장 중 오류가 발생했습니다.");
+    } finally {
+      if (commitBtn) commitBtn.textContent = "확인한 내용대로 저장";
+    }
   }
 
   // ---------------------------------------------------------------------
@@ -3797,6 +4141,14 @@
     };
   }
 
+  // lastV2Data/v2LastMonthly는 새로고침 시 초기화되는 메모리 변수라, 세션스토리지에 함께 저장해뒀다가
+  // 페이지 재진입 시 복원한다. (안 하면 "TS가 찾은 절세 공제" 등 v2 기반 카드가 새로고침 후 계속 공란으로 보임)
+  function persistV2State() {
+    try {
+      sessionStorage.setItem("ts_last_v2_data_v1", JSON.stringify({ lastV2Data, v2LastMonthly }));
+    } catch (_) { /* 저장 공간 부족 등은 무시 - 화면 표시에는 영향 없음 */ }
+  }
+
   async function runV2Opportunity(payload) {
     const business_info = buildV2BusinessInfo(payload);
     const monthly = [buildV2Monthly(payload)];
@@ -3810,12 +4162,14 @@
     });
     if (!res.ok) {
       lastV2Data = null;
+      persistV2State();
       renderDashboardHome();
       return;
     }
     const data = await res.json();
     lastV2Data = data;
     if (Array.isArray(data.monthly) && data.monthly.length) v2LastMonthly = data.monthly;
+    persistV2State();
     renderDashboardHome();
   }
 
@@ -3826,12 +4180,14 @@
     const res = await fetchWithRetry(`${base}/api/v2/sample`, {});
     if (!res.ok) {
       lastV2Data = null;
+      persistV2State();
       renderDashboardHome();
       return;
     }
     const data = await res.json();
     v2LastMonthly = data.monthly;
     lastV2Data = data;
+    persistV2State();
     renderDashboardHome();
   }
 
@@ -4066,6 +4422,16 @@
 
   const lastRunId = sessionStorage.getItem("ts_last_run_id");
   const lastResponseRaw = sessionStorage.getItem("ts_last_response_v1");
+  const lastV2Raw = sessionStorage.getItem("ts_last_v2_data_v1");
+  if (lastV2Raw) {
+    try {
+      const restoredV2 = JSON.parse(lastV2Raw);
+      lastV2Data = restoredV2?.lastV2Data ?? null;
+      v2LastMonthly = restoredV2?.v2LastMonthly ?? null;
+    } catch (e) {
+      console.error("[TS] v2 restore failed:", e);
+    }
+  }
 
   if (lastResponseRaw) {
     try {
