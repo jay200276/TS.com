@@ -31,7 +31,10 @@ INCOME_TAX_BRACKETS_2023_2024: List[IncomeTaxBracket] = [
 #  - 간이과세 적용 상한: 직전 연도 공급대가 1억 400만원 미만
 #  - 일반과세 전환: 1억 400만원 이상
 #  - 납부의무 면제: 4,800만원 미만 (부가세 전액 면제, 주석: 세금계산서 제외 등)
-#  - 2026 신규 지역 배제(캡처): 서울 강남구/서초구(전 업종) 등
+#  - 배제지역: 아래 SIMPLE_VAT_EXCLUDED_RULES_2026은 미사용 placeholder였고,
+#    실제 배제지역 판정은 data/official/simple_excluded_areas.csv(국세청 고시 제2024-35호
+#    별표 기준, 756개 법정동/756개 동 단위 추출)를 official_db_kr.is_simple_excluded_area()가
+#    조회한다. is_simple_excluded_area는 시/군/구/동 3개가 모두 입력된 경우에만 동작한다.
 # =========================
 @dataclass(frozen=True)
 class SimpleVatThresholds:
@@ -44,14 +47,6 @@ SIMPLE_VAT_THRESHOLDS_2026 = SimpleVatThresholds(
     general_switch_inclusive=104_000_000,
     vat_exempt_upper_exclusive=48_000_000,
 )
-
-# 지역 배제(캡처에 나온 텍스트를 "규칙형 힌트"로만 사용)
-SIMPLE_VAT_EXCLUDED_RULES_2026 = [
-    # (region_hint, note)
-    ("SEOUL_GANGNAM_SEOCHO", "서울 강남구·서초구: 전 업종 간이과세 불가(2026 개정 캡처 기준)"),
-    ("SUWON_YEONGTONG_GOYANG_ILSANDONG_ILSANSEO", "수원 영통구, 고양 일산동·서구: 음식점·소매업 간이 불가(2026 개정 캡처 기준)"),
-    ("NEW_TOWN_COMMERCIAL", "신도시 상권(판교·동탄 등): 지정 업종 간이 불가(2026 개정 캡처 기준)"),
-]
 
 
 # =========================
