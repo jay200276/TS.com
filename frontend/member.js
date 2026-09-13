@@ -160,6 +160,19 @@
     setTab("result");
   });
 
+  const brandHomeLink = $("brandHomeLink");
+  function goHomeInput() {
+    setTab("input");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  brandHomeLink?.addEventListener("click", goHomeInput);
+  brandHomeLink?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      goHomeInput();
+    }
+  });
+
   const inpMonth = $("inpMonth");
   const selRegion = $("selRegion");
   const selIndustry = $("selIndustry");

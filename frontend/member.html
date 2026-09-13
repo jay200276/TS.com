@@ -81,7 +81,10 @@
     .brand{
       display:flex; align-items:center; gap:12px;
       min-width: 260px;
+      cursor:pointer; border-radius:12px;
     }
+    .brand:hover{ background: rgba(15,23,42,.04); }
+    .brand:focus-visible{ outline:2px solid var(--primary2); outline-offset:2px; }
     .logo{
       width:38px; height:38px; border-radius:12px;
       overflow:hidden;
@@ -1170,7 +1173,7 @@
 <body>
   <header class="topbar">
     <div class="topbar-inner">
-      <div class="brand">
+      <div class="brand" id="brandHomeLink" role="button" tabindex="0" title="처음 화면으로">
         <div class="logo"><img src="./ts-logo.png" alt="TS Logo" /></div>
         <div class="brand-text">
           <div class="t1">TS (tax secretary)</div>
@@ -1683,6 +1686,6 @@
     }, true);
   </script>
 
-  <script src="./member.js?v=202609110b"></script>
+  <script src="./member.js?v=202609130a"></script>
 </body>
 </html>
