@@ -17,3 +17,4 @@ backend/local_dev.db.backup-*
 .codex-ppt-inspect/
 .DS_Store
 .claude/settings.local.json
+backend/_scratch_hwp/
