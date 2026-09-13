@@ -22,32 +22,34 @@ def _norm(s: Optional[str]) -> str:
     return x
 
 
-# ✅ UI 세부 업종(라벨) -> 내부 대표 business_type_code 로 “접기”
-# 현재 official_benchmarks에 사실상 FOOD_ALL만 있어도,
-# 구조를 미리 만들어두면 나중에 CAFE/PUB/세부분류 공식데이터가 추가될 때 그대로 확장 가능.
+# ✅ UI 세부 업종(라벨) -> 내부 대표 business_type_code 로 매핑.
+# official_benchmarks에 업종별(KOREAN/CHINESE/JAPANESE/...) 데이터가 실제로 존재하므로
+# (analysis_engine.py의 _normalize_industry_detail과 동일 기준으로 맞춤),
+# 예전처럼 전부 FOOD_ALL로 뭉뚱그리지 않고 세부 업종 데이터를 그대로 활용한다.
 _DETAIL_TO_BIZ: dict[str, str] = {
     # ----- 음식점(세분) -----
-    _norm("백반/한식"): "FOOD_ALL",
-    _norm("중식"): "FOOD_ALL",
-    _norm("일식"): "FOOD_ALL",
-    _norm("찜,탕"): "FOOD_ALL",
-    _norm("고기"): "FOOD_ALL",
-    _norm("치킨"): "FOOD_ALL",
-    _norm("피자"): "FOOD_ALL",
-    _norm("패스트푸드"): "FOOD_ALL",
-    _norm("간식"): "FOOD_ALL",
-    _norm("도시락"): "FOOD_ALL",
-    _norm("족발"): "FOOD_ALL",
-    _norm("야식"): "FOOD_ALL",
-    _norm("아시아"): "FOOD_ALL",
-    _norm("양식"): "FOOD_ALL",
-    _norm("기타(일반)"): "FOOD_ALL",
+    _norm("백반/한식"): "KOREAN",
+    _norm("찜,탕"): "KOREAN",
+    _norm("고기"): "KOREAN",
+    _norm("도시락"): "KOREAN",
+    _norm("족발"): "KOREAN",
+    _norm("기타(일반)"): "KOREAN",
+    _norm("중식"): "CHINESE",
+    _norm("일식"): "JAPANESE",
+    _norm("치킨"): "CHICKEN",
+    _norm("피자"): "PIZZA",
+    _norm("패스트푸드"): "FASTFOOD",
+    _norm("간식"): "SNACK",
+    _norm("야식"): "SNACK",
+    _norm("아시아"): "ASIAN_OTHER",
+    _norm("양식"): "WESTERN",
     _norm("기타"): "FOOD_ALL",
 
     # ----- 카페/베이커리 -----
     _norm("카페"): "CAFE",
-    _norm("디저트"): "CAFE",
-    _norm("베이커리"): "CAFE",
+    _norm("디저트"): "DESSERT",
+    _norm("베이커리"): "BAKERY",
+    _norm("제과/베이커리"): "BAKERY",
 
     # ----- 주점/기타 -----
     _norm("주점"): "PUB",
@@ -59,7 +61,8 @@ def map_detail_to_biz_code(detail_label: Optional[str], fallback: str = "FOOD_AL
     UI에서 선택된 세부 업종 라벨을,
     공식 벤치마크 조회에 사용할 대표 business_type_code로 변환.
 
-    - 매칭되면: CAFE / PUB / FOOD_ALL
+    - 매칭되면: KOREAN / CHINESE / JAPANESE / CHICKEN / PIZZA / FASTFOOD / SNACK /
+      ASIAN_OTHER / WESTERN / CAFE / DESSERT / BAKERY / PUB / FOOD_ALL 중 하나
     - 매칭 안 되면: fallback(기본은 FOOD_ALL)
     """
     key = _norm(detail_label)

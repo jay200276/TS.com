@@ -27,9 +27,9 @@ INCOME_TAX_BRACKETS_2023_2024: List[IncomeTaxBracket] = [
 
 
 # =========================
-# 2) 2026 간이과세 기준 (국세청/easyLaw 캡처 기준)
-#  - 간이과세 적용 상한: 직전 연도 공급대가 1억 4천만원 미만
-#  - 일반과세 전환: 1억 4천만원 초과
+# 2) 2026 간이과세 기준 (부가가치세법 시행령 제109조 기준)
+#  - 간이과세 적용 상한: 직전 연도 공급대가 1억 400만원 미만
+#  - 일반과세 전환: 1억 400만원 이상
 #  - 납부의무 면제: 4,800만원 미만 (부가세 전액 면제, 주석: 세금계산서 제외 등)
 #  - 2026 신규 지역 배제(캡처): 서울 강남구/서초구(전 업종) 등
 # =========================
@@ -40,8 +40,8 @@ class SimpleVatThresholds:
     vat_exempt_upper_exclusive: int # < 이면 납부의무 면제(간이 기준)
 
 SIMPLE_VAT_THRESHOLDS_2026 = SimpleVatThresholds(
-    simple_upper_exclusive=140_000_000,
-    general_switch_inclusive=140_000_000,
+    simple_upper_exclusive=104_000_000,
+    general_switch_inclusive=104_000_000,
     vat_exempt_upper_exclusive=48_000_000,
 )
 
@@ -55,39 +55,41 @@ SIMPLE_VAT_EXCLUDED_RULES_2026 = [
 
 
 # =========================
-# 3) 2026 의제매입세액공제 룰 (법령+고시 캡처 기준)
-#  - 계산식(캡처): 의제매입세액 *공제율* 중 [과세표준 × 한도율 × 환산계수] 이내 공제
-#  - 일반음식점(개인): 1억 이하 9/109 & 75%, 1~2억 9/109 & 70%, 2억 초과 9/109 & 60%
-#  - 제과/베이커리(개인): 2억 이하 8/108 & 65%, 2억 초과 8/108 & 55%
-#  - 유흥음식점(개인): 전체 2/102 & 30%
-#  - 법인음식점(전체): 전체 6/106 & 50%
+# 3) 2026 의제매입세액공제 룰 (부가가치세법 시행령 제84조 기준)
+#  - 계산식: 의제매입세액 = min(면세매입액 × 공제율, 과세표준 × 한도율)
+#  - 일반음식점(개인): 과세표준 2억원 이하 9/109(우대, 2028.12.31까지 연장) & 한도 50%,
+#    2억원 초과 8/108(일반) & 한도 40% (2026년부터 한도가 75/70/60%에서 50/50/40%로 축소됨)
+#    ※ sales_lower/upper는 부가세 포함 매출 기준으로 환산한 값(과세표준 1억/2억원 ×1.1)
+#  - 제과/베이커리(개인): 2억 이하 8/108 & 65%, 2억 초과 8/108 & 55% (별도 확인 필요, 미검증)
+#  - 유흥음식점(개인): 전체 2/102 & 30% (별도 확인 필요, 미검증)
+#  - 법인음식점(전체): 6/106 & 한도 30% (2026년부터 한도가 50%에서 30%로 축소됨)
 # =========================
 @dataclass(frozen=True)
 class DeemedInputRule:
     industry_key: str             # "FOODSVC" etc (서비스 내부키)
     taxpayer_type: str            # "PERSONAL" | "CORP"
-    sales_lower: int              # inclusive (연)
-    sales_upper: Optional[int]    # exclusive (연), None = infinity
+    sales_lower: int              # inclusive (연, 부가세 포함)
+    sales_upper: Optional[int]    # exclusive (연, 부가세 포함), None = infinity
     factor_num: int               # e.g. 9
     factor_den: int               # e.g. 109
     credit_rate: float            # e.g. 0.75
-    cap_rate: float               # 캡처: 75%/70%/60% 등을 "공제한도율(우대연장)"로 표시 -> 동일 수치로 저장
+    cap_rate: float               # 공제한도율(과세표준 대비) — 실제 공제액 계산에 사용되는 값
 
 DEEMED_INPUT_RULES_2026: List[DeemedInputRule] = [
-    # 일반음식점(개인)
-    DeemedInputRule("FOODSVC", "PERSONAL", 0,          100_000_000, 9, 109, 0.75, 0.75),
-    DeemedInputRule("FOODSVC", "PERSONAL", 100_000_000,200_000_000, 9, 109, 0.70, 0.70),
-    DeemedInputRule("FOODSVC", "PERSONAL", 200_000_000,None,        9, 109, 0.60, 0.60),
+    # 일반음식점(개인) - 과세표준 2억원(부가세포함 2.2억원) 이하 9/109, 초과 8/108
+    DeemedInputRule("FOODSVC", "PERSONAL", 0,          110_000_000, 9, 109, 0.50, 0.50),
+    DeemedInputRule("FOODSVC", "PERSONAL", 110_000_000,220_000_000, 9, 109, 0.50, 0.50),
+    DeemedInputRule("FOODSVC", "PERSONAL", 220_000_000,None,        8, 108, 0.40, 0.40),
 
-    # 제과/베이커리(개인)
+    # 제과/베이커리(개인) - 미검증, 기존값 유지
     DeemedInputRule("BAKERY", "PERSONAL", 0,          200_000_000, 8, 108, 0.65, 0.65),
     DeemedInputRule("BAKERY", "PERSONAL", 200_000_000,None,        8, 108, 0.55, 0.55),
 
-    # 유흥(개인)
+    # 유흥(개인) - 미검증, 기존값 유지
     DeemedInputRule("PUB",    "PERSONAL", 0,          None,        2, 102, 0.30, 0.30),
 
     # 법인 음식점(전체 업종키를 FOODSVC로 묶어 처리 — 추후 세분화 가능)
-    DeemedInputRule("FOODSVC","CORP",     0,          None,        6, 106, 0.50, 0.50),
+    DeemedInputRule("FOODSVC","CORP",     0,          None,        6, 106, 0.30, 0.30),
 ]
 
 
@@ -111,11 +113,13 @@ EXPENSE_RATIOS_2026_BY_HOMETAX_CODE: Dict[str, Dict[str, float]] = {
 
 
 # =========================
-# 5) 2026 4대보험 요율/상하한(캡처 기준)
-#  - 국민연금: 총 9.5% (각 4.75%), 보수월액 하 400,000 / 상 6,370,000
+# 5) 2026 4대보험 요율/상하한
+#  - 국민연금: 총 9.5% (각 4.75%), 기준소득월액 하 410,000 / 상 6,590,000 (2026.7~2027.6 적용분)
 #  - 건강보험: 총 7.19% (각 3.595%), 보수월액 상 9,183,480 (하한은 보험료 하한 20,160원 캡처)
-#  - 고용보험: 총 2.7% (근로자 0.9%, 사업주 1.8%) (상하한 없음으로 표기)
-#  - 산재보험: 업종별 0.7~18.6, 음식점 평균 1.47% (사업주 전액)
+#  - 장기요양보험: 건강보험료의 13.14% (노사 각 절반) → 급여 대비 환산 시 약 0.9448%(각 0.4724%)
+#  - 고용보험: 실업급여 노사 각 0.9%(총 1.8%) + 고용안정·직업능력개발사업 0.25%(150인 미만, 사업주 전액)
+#    → 소상공인(150인 미만) 사업주 실부담 = 0.9%+0.25% = 1.15%
+#  - 산재보험: 도소매·음식·숙박업 0.8% + 통상 출퇴근재해요율(전업종 공통) 0.06% = 0.86%
 # =========================
 @dataclass(frozen=True)
 class InsuranceTable2026:
@@ -129,6 +133,8 @@ class InsuranceTable2026:
     health_max_wage: int
     health_min_premium: int  # 캡처: 20,160원(보험료)
 
+    longterm_rate_of_health: float  # 건강보험료 대비 장기요양보험료율
+
     employment_total_rate: float
     employment_employer_rate: float
 
@@ -137,16 +143,19 @@ class InsuranceTable2026:
 INSURANCE_2026 = InsuranceTable2026(
     pension_total_rate=0.095,
     pension_employer_rate=0.0475,
-    pension_min_wage=400_000,
-    pension_max_wage=6_370_000,
+    pension_min_wage=410_000,
+    pension_max_wage=6_590_000,
 
     health_total_rate=0.0719,
     health_employer_rate=0.03595,
     health_max_wage=9_183_480,
     health_min_premium=20_160,
 
-    employment_total_rate=0.027,
-    employment_employer_rate=0.018,
+    longterm_rate_of_health=0.1314,
 
-    industrial_employer_rate_avg_foodsvc=0.0147,
+    # 실업급여 0.9%(노사 각) + 고용안정·직업능력개발사업 0.25%(사업주 전액, 150인 미만 기준)
+    employment_total_rate=0.0205,
+    employment_employer_rate=0.0115,
+
+    industrial_employer_rate_avg_foodsvc=0.0086,
 )

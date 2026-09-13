@@ -5,6 +5,9 @@ from typing import Any, Dict, List
 
 from .tax_engine import (
     EngineMeta,
+    decide_taxpayer_type,
+    compute_vat_simple,
+    compute_vat_general,
     compute_income_tax,
     compute_local_income_tax,
     compute_insurance_employer_estimate,
@@ -19,10 +22,6 @@ DEFAULT_BENCHMARK = {
     "PROFIT_RATIO": 0.08,
     "COST_RATIO": 0.92,
 }
-
-
-def _vat_portion(gross: float) -> float:
-    return max(0.0, gross) / 11.0
 
 
 def _real_benchmark_row(*, metric: str, business_type_code: str, region_code: str, size_band: str) -> Dict[str, Any]:
@@ -57,17 +56,42 @@ def build_tax_brief(*, business_info: Dict[str, Any], financial_summary: Dict[st
     sum_profit = sum(m["profit"] for m in monthly)
     sum_labor = sum(m["labor_cost"] for m in monthly)
 
-    annual_taxable_base = (sum_sales / 1.1) * annualize
-    output_vat = annual_taxable_base * 0.10
-
-    taxable_purchase = max(0.0, sum_material - sum_exempt) + sum_rent + sum_other
-    input_vat_credit = _vat_portion(taxable_purchase) * annualize
-
-    vat_due_annual = max(0.0, output_vat - input_vat_credit)
-
     meta = EngineMeta()
     annual_profit = sum_profit * annualize
     annual_revenue = sum_sales * annualize
+
+    # 간이/일반과세 여부를 실제로 판정한 뒤, 그에 맞는 계산식(간이 실효세율 vs 일반 매입세액공제+의제매입세액공제)을
+    # 적용한다. 예전에는 항상 일반과세 방식(매출×10%-매입세액)만 썼는데, 간이과세 대상 사업자에게는
+    # 실제보다 훨씬 큰 부가세를 보여주는 오류가 있었다.
+    taxpayer_type = decide_taxpayer_type(
+        prior_year_sales_vat_included=business_info.get("prior_year_sales_vat_included"),
+        current_annual_sales_vat_included=int(round(annual_revenue)),
+        region_code=business_info.get("region_code") or "ALL",
+        meta=meta,
+        year=2026,
+    )
+
+    if taxpayer_type == "SIMPLE":
+        vat_result = compute_vat_simple(
+            annual_sales_vat_included=int(round(annual_revenue)),
+            meta=meta,
+            industry_code="FOODSVC",
+            year=2026,
+        )
+        vat_due_annual = float(vat_result.get("vat_due_month", 0)) * 12.0
+    else:
+        taxable_purchase_month = (max(0.0, sum_material - sum_exempt) + sum_rent + sum_other) / months
+        exempt_agri_purchase_month = sum_exempt / months
+        vat_result = compute_vat_general(
+            taxable_sales_vat_included=int(round(sum_sales / months)),
+            purchase_vat_included_total=int(round(taxable_purchase_month)),
+            exempt_agri_purchase_vat_exempt=int(round(exempt_agri_purchase_month)),
+            annual_sales_vat_included=int(round(annual_revenue)),
+            meta=meta,
+            industry_code="FOODSVC",
+            year=2026,
+        )
+        vat_due_annual = float(vat_result.get("vat_due_month", 0)) * 12.0
 
     # 구버전(main.py)과 동일하게: 업종 상위 25%(p75) 이익률을 넘는 부분은
     # 비정상 입력값일 수 있다고 보고 과세표준을 보수적으로 캡 씌운다.

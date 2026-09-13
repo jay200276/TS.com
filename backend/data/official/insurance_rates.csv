@@ -1,6 +1,7 @@
-﻿year_applied,item,employer_rate,employee_rate,lower_bound,upper_bound,industry_code,source_title,source_url
-2026,NPS,0.0475,0.0475,400000,6370000,,"국민연금 요율","https://www.nps.or.kr/"
-2026,HEALTH,0.03595,0.03595,,,,"건강보험 요율","https://www.nhis.or.kr/"
-2026,EMPLOYMENT,0.018,0.009,,,,"고용보험 요율","https://www.ei.go.kr/"
-2026,ACCIDENT,0.0095,0,,,Q56211,"산재보험 업종요율","https://www.comwel.or.kr/"
-2026,ACCIDENT,0.0095,0,,,FOODSVC,"산재보험 업종요율(음식업 매핑)","https://www.comwel.or.kr/"
+year_applied,item,employer_rate,employee_rate,lower_bound,upper_bound,industry_code,source_title,source_url
+2026,NPS,0.0475,0.0475,410000,6590000,,"국민연금 기준소득월액 상하한(2026.7~2027.6 적용분, 보건복지부 고시)","https://www.nps.or.kr/"
+2026,HEALTH,0.03595,0.03595,,,,"건강보험 요율(2026년 7.19%, 노사 각 3.595%)","https://www.nhis.or.kr/"
+2026,LONGTERM,0.004725,0.004725,,,,"장기요양보험료율(건강보험료의 13.14%를 급여 대비 실효요율로 환산: 3.595%*13.14%), 노사 각 절반 부담","https://www.nhis.or.kr/"
+2026,EMPLOYMENT,0.0115,0.009,,,,"고용보험료율: 실업급여 0.9%(노사 각 부담)+고용안정·직업능력개발사업 0.25%(사업주 전액, 150인 미만 사업장 기준)","https://www.ei.go.kr/"
+2026,ACCIDENT,0.0086,0,,,Q56211,"산재보험 업종요율(도소매·음식·숙박업 0.8%)+통상 출퇴근재해요율(전업종 공통 0.06%)","https://www.comwel.or.kr/"
+2026,ACCIDENT,0.0086,0,,,FOODSVC,"산재보험 업종요율(음식업 매핑, 도소매·음식·숙박업 0.8%)+통상 출퇴근재해요율(전업종 공통 0.06%)","https://www.comwel.or.kr/"

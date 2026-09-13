@@ -262,10 +262,13 @@ def compute_vat_simple(
 # ============================================================
 # (D) 부가세 - 일반 (의제매입 포함)
 # ============================================================
-def _tax_base_band_from_annual_sales(annual_sales: int) -> str:
-    if annual_sales <= 100_000_000:
+def _tax_base_band_from_annual_sales(annual_sales_vat_included: int) -> str:
+    # 의제매입세액공제 구간(1억원/2억원)은 법령상 "과세표준"(부가세 제외 공급가액) 기준이라,
+    # 부가세 포함 연매출과 비교하려면 기준액에 부가세(×1.1)를 반영해 환산해야 한다.
+    # (과세표준 1억원 = 부가세포함 1.1억원, 과세표준 2억원 = 부가세포함 2.2억원)
+    if annual_sales_vat_included <= 110_000_000:
         return "LE_100M"
-    if annual_sales <= 200_000_000:
+    if annual_sales_vat_included <= 220_000_000:
         return "100M_200M"
     return "GT_200M"
 
@@ -464,6 +467,18 @@ def compute_insurance_employer_estimate(
     else:
         health_employer = int(round(payroll * float(health["employer_rate"])))
 
+    # 장기요양보험 (건강보험과 별도 항목이지만 건강보험료 대비 비율로 고시되므로,
+    # 급여 대비 실효요율로 미리 환산해 테이블에 저장해두고 동일한 방식으로 합산한다)
+    longterm = by_item.get("LONGTERM")
+    longterm_employer = 0
+    if not longterm:
+        if meta:
+            meta.partial_failures.append(
+                _pf("INSURANCE_LONGTERM_RATE_NOT_FOUND", "장기요양보험 요율 테이블 조회 실패", source_type="heuristic", confidence=0.3)
+            )
+    else:
+        longterm_employer = int(round(payroll * float(longterm["employer_rate"])))
+
     # 고용보험
     emp = by_item.get("EMPLOYMENT")
     employment_employer = 0
@@ -494,12 +509,14 @@ def compute_insurance_employer_estimate(
                     confidence=0.6,
                 )
             )
-        # 첫 row가 있으면 그걸(예: Q56211 0.95% 같은 것), 없으면 1.05%로
-        accident_rate = float(accident_rows[0]["employer_rate"]) if accident_rows else 0.0105
+        # 첫 row가 있으면 그걸(예: Q56211 0.86% 같은 것), 없으면 도소매·음식·숙박업 기준(0.86%)으로
+        accident_rate = float(accident_rows[0]["employer_rate"]) if accident_rows else 0.0086
 
     industrial_employer = int(round(payroll * accident_rate))
 
-    total_employer = pension_employer + health_employer + employment_employer + industrial_employer
+    total_employer = (
+        pension_employer + health_employer + longterm_employer + employment_employer + industrial_employer
+    )
 
     if meta:
         meta.debug["insurance_rates_used"] = {
@@ -514,6 +531,7 @@ def compute_insurance_employer_estimate(
         "payroll_month_total": payroll,
         "pension_employer": pension_employer,
         "health_employer": health_employer,
+        "longterm_employer": longterm_employer,
         "employment_employer": employment_employer,
         "industrial_employer": industrial_employer,
         "industrial_rate_used": accident_rate,
@@ -523,6 +541,7 @@ def compute_insurance_employer_estimate(
         "details": {
             "pension_employer": pension_employer,
             "health_employer": health_employer,
+            "longterm_employer": longterm_employer,
             "employment_employer": employment_employer,
             "industrial_employer": industrial_employer,
             "industrial_rate_used": accident_rate,

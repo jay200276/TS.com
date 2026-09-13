@@ -1,4 +1,4 @@
 ﻿year_applied,business_entity,industry_group,tax_base_band,rate_numerator,rate_denominator,limit_ratio,source_title,source_url
-2026,PERSONAL,FOODSVC,LE_100M,9,109,0.50,"의제매입세액공제 고시/법령","https://www.law.go.kr/"
-2026,PERSONAL,FOODSVC,100M_200M,8,108,0.50,"의제매입세액공제 고시/법령","https://www.law.go.kr/"
-2026,PERSONAL,FOODSVC,GT_200M,8,108,0.40,"의제매입세액공제 고시/법령","https://www.law.go.kr/"
+2026,PERSONAL,FOODSVC,LE_100M,9,109,0.50,"부가가치세법 시행령 제84조 - 개인 음식점업 과세표준 2억원 이하 9/109 우대공제율(2028.12.31까지 연장), 2026년 한도 50%","https://www.law.go.kr/"
+2026,PERSONAL,FOODSVC,100M_200M,9,109,0.50,"부가가치세법 시행령 제84조 - 개인 음식점업 과세표준 2억원 이하 9/109 우대공제율(2028.12.31까지 연장), 2026년 한도 50%","https://www.law.go.kr/"
+2026,PERSONAL,FOODSVC,GT_200M,8,108,0.40,"부가가치세법 시행령 제84조 - 개인 음식점업 과세표준 2억원 초과 8/108 일반공제율, 2026년 한도 40%","https://www.law.go.kr/"
