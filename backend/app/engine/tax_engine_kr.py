@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import date
 from typing import Any, Dict, Optional, List, Literal, Tuple
 
 from .official_db_kr import (
@@ -115,10 +116,16 @@ def decide_taxpayer_type(
     region_si_do: Optional[str] = None,
     region_si_gun_gu: Optional[str] = None,
     region_eup_myeon_dong: Optional[str] = None,
-    effective_date: str = "2026-01-01",
+    effective_date: Optional[str] = None,
     year: int = 2026,
     **_kwargs: Any,
 ) -> str:
+    # effective_date 미지정 시 "오늘" 기준으로 배제지역 고시를 조회한다.
+    # (예전엔 "2026-01-01"로 고정돼 있어서, 이후 갱신된 고시(예: 2026-07-01 시행분)가
+    # DB에 들어와도 조회 시점이 그보다 앞선 채로 고정돼 있어 계속 무시되는 버그가 있었음)
+    if not effective_date:
+        effective_date = date.today().isoformat()
+
     # 간이/일반과세 판정은 법적으로 "전년도 매출" 기준이지만, 이 값이 없으면(quick 모드 등)
     # 무조건 0으로 간주해 항상 간이과세로 잘못 판정되던 문제가 있었음.
     # 전년도 매출이 없을 땐 이번 달 매출을 연 환산한 값을 대체 추정치로 사용.
