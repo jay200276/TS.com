@@ -67,6 +67,9 @@ def build_tax_brief(*, business_info: Dict[str, Any], financial_summary: Dict[st
         prior_year_sales_vat_included=business_info.get("prior_year_sales_vat_included"),
         current_annual_sales_vat_included=int(round(annual_revenue)),
         region_code=business_info.get("region_code") or "ALL",
+        region_si_do=business_info.get("region_si_do"),
+        region_si_gun_gu=business_info.get("region_si_gun_gu"),
+        region_eup_myeon_dong=business_info.get("region_eup_myeon_dong"),
         meta=meta,
         year=2026,
     )

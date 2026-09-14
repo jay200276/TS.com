@@ -175,6 +175,8 @@
 
   const inpMonth = $("inpMonth");
   const selRegion = $("selRegion");
+  const inpSiGunGu = $("inpSiGunGu");
+  const inpEupMyeonDong = $("inpEupMyeonDong");
   const selIndustry = $("selIndustry");
   const inpSales = $("inpSales");
   const inpCostTotal = $("inpCostTotal");
@@ -513,6 +515,14 @@
   function buildPayload(options = {}) {
     const month = safeMonthValue();
     const region_code = String(selRegion.value || "").trim() || "ALL";
+    // 간이과세 배제지역 판정용 상세 주소. 시/도는 지역 선택 드롭다운의 표시 텍스트(예: "서울")를
+    // 그대로 쓴다 - 배제지역 CSV(simple_excluded_areas.csv)의 si_do 값과 동일한 표기이기 때문.
+    const selectedRegionLabel = String(selRegion?.selectedOptions?.[0]?.textContent || "").trim();
+    const region_si_do = (selectedRegionLabel && selectedRegionLabel !== "지역 선택" && selectedRegionLabel !== "전국")
+      ? selectedRegionLabel
+      : null;
+    const region_si_gun_gu = String(inpSiGunGu?.value || "").trim() || null;
+    const region_eup_myeon_dong = String(inpEupMyeonDong?.value || "").trim() || null;
     const industrySel = String(selIndustry.value || "").trim();
     const resolved = resolveIndustrySelection(industrySel);
 
@@ -570,6 +580,9 @@
     return {
       month,
       region_code,
+      region_si_do,
+      region_si_gun_gu,
+      region_eup_myeon_dong,
 
       revenue_vat_included,
       cost_vat_included,
@@ -4127,6 +4140,9 @@
       prior_year_sales_vat_included: Number(payload.prior_year_sales_vat_included || 0),
       analysis_period_label: payload.month || null,
       region_code: payload.region_code || "ALL",
+      region_si_do: payload.region_si_do || null,
+      region_si_gun_gu: payload.region_si_gun_gu || null,
+      region_eup_myeon_dong: payload.region_eup_myeon_dong || null,
     };
   }
 

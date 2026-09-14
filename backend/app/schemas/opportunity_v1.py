@@ -16,6 +16,9 @@ class BusinessInfoIn(BaseModel):
     prior_year_sales_vat_included: int = 0
     analysis_period_label: Optional[str] = None
     region_code: str = "ALL"
+    region_si_do: Optional[str] = None
+    region_si_gun_gu: Optional[str] = None
+    region_eup_myeon_dong: Optional[str] = None
 
 
 class MonthlyRecordIn(BaseModel):

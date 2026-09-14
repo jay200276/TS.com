@@ -229,6 +229,9 @@ class CalcResponse(BaseModel):
 class CalcRequest(BaseModel):
     month: str
     region_code: str = "ALL"
+    region_si_do: Optional[str] = None
+    region_si_gun_gu: Optional[str] = None
+    region_eup_myeon_dong: Optional[str] = None
 
     revenue_vat_included: int
     cost_vat_included: int
@@ -653,6 +656,9 @@ def _make_calc_response(req: CalcRequest, record_id: Optional[str]) -> CalcOrErr
         prior_year_sales_vat_included=req.prior_year_sales_vat_included,
         current_annual_sales_vat_included=annual_sales_vat_included,
         region_code=region_code,
+        region_si_do=req.region_si_do,
+        region_si_gun_gu=req.region_si_gun_gu,
+        region_eup_myeon_dong=req.region_eup_myeon_dong,
         meta=em,
         excluded_simple_regions=None,
     )
