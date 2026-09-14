@@ -32,9 +32,11 @@ INCOME_TAX_BRACKETS_2023_2024: List[IncomeTaxBracket] = [
 #  - 일반과세 전환: 1억 400만원 이상
 #  - 납부의무 면제: 4,800만원 미만 (부가세 전액 면제, 주석: 세금계산서 제외 등)
 #  - 배제지역: 아래 SIMPLE_VAT_EXCLUDED_RULES_2026은 미사용 placeholder였고,
-#    실제 배제지역 판정은 data/official/simple_excluded_areas.csv(국세청 고시 제2024-35호
-#    별표 기준, 756개 법정동/756개 동 단위 추출)를 official_db_kr.is_simple_excluded_area()가
-#    조회한다. is_simple_excluded_area는 시/군/구/동 3개가 모두 입력된 경우에만 동작한다.
+#    실제 배제지역 판정은 data/official/simple_excluded_areas.csv(국세청고시 제2026-19호,
+#    2026-07-01 시행, 447행)를 official_db_kr.is_simple_excluded_area()가 조회한다.
+#    is_simple_excluded_area는 시/군/구/동 3개가 모두 입력된 경우에만 동작하며,
+#    effective_date는 tax_engine_kr.decide_taxpayer_type()에서 미지정 시 오늘 날짜로
+#    자동 설정되므로 CSV의 effective_from만 갱신하면 새 고시가 자동 반영된다.
 # =========================
 @dataclass(frozen=True)
 class SimpleVatThresholds:
